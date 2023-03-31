@@ -16,6 +16,7 @@ module control_unit_testbench;
         Instr = 32'b11000100000010000000000000000001;
         #10 Instr = 32'b10001010000000000000000000000000;
         #20 Instr = 32'b10001010100000000000000000000000;
+        #30 Instr = 32'b10001011001100000000000000000000;
     end
     initial begin
         $display("\nControl Unit results:");
@@ -55,30 +56,66 @@ module control_unit(output reg I31, I30, I24, I13,
         end
 
         // Convert the opcode from instr to the opcode that will be used for the ALU
-        ID_Instr_Alter_CC = 0; // Preliminary value if conditions met then 
+        ID_Instr_Alter_CC = 0; // Preliminary value if conditions are met then change it
         opcode = {Instr[31:30],Instr[24:19]}; // Join op and op3
-        case(opcode) 
+        case(opcode)
+            // Basic Arithmetic Instructions
             8'b10000000: ID_ALU_OP = 4'b0000; // add -> A + B for ALU
             8'b10010000: begin 
                             ID_ALU_OP = 4'b0000; // addcc -> A + B for ALU modify icc
                             ID_Instr_Alter_CC = 1;
-                        end
+            end
             8'b10001000: ID_ALU_OP = 4'b0001; // addx -> A + B + Cin for ALU
             8'b10011000: begin
                             ID_ALU_OP = 4'b0001; // addxcc -> A + B + Cin for ALU modify icc
                             ID_Instr_Alter_CC = 1;
-                        end
+            end
             8'b10000100: ID_ALU_OP = 4'b0010; // sub -> A - B for ALU
             8'b10010100: begin
                             ID_ALU_OP = 4'b0010; // subcc -> A - B for ALU modify icc
                             ID_Instr_Alter_CC = 1;
-                        end
+            end
             8'b10001100: ID_ALU_OP = 4'b0011; // subx -> A - B - Cin for ALU
             8'b10011100: begin
                             ID_ALU_OP = 4'b0011; // subxcc -> A - B - Cin for ALU modify icc
                             ID_Instr_Alter_CC = 1;
-                        end
-            // TODO: Continue for logic, shifts, load/store, etc.
+            end
+            // Logical Instructions
+            8'b10000001: ID_ALU_OP = 4'b0100; // and -> A and B for ALU
+            8'b10010001: begin
+                            ID_ALU_OP = 4'b0100; // andcc -> A and B for ALU modify icc
+                            ID_Instr_Alter_CC = 1;
+            end
+            8'b10000101: ID_ALU_OP = 4'b1000; // andn  -> A and (not B) for ALU
+            8'b10010101: begin
+                            ID_ALU_OP = 4'b1000; // andncc -> A and (not B) for ALU modify icc
+                            ID_Instr_Alter_CC = 1;
+            end
+            8'b10000010: ID_ALU_OP = 4'b0101; // or -> A or B for ALU
+            8'b10010010: begin
+                            ID_ALU_OP = 4'b0101; // orcc -> A or B for ALU modify icc
+                            ID_Instr_Alter_CC = 1;
+            end
+            8'b10000110: ID_ALU_OP = 4'b1001; // orn -> A or (not B) for ALU
+            8'b10010110: begin
+                            ID_ALU_OP = 4'b1001; //orncc -> A or (not B) for ALU modify icc
+                            ID_Instr_Alter_CC = 1;
+            end
+            8'b10000011: ID_ALU_OP = 4'b0110; // xor -> A xor B for ALU
+            8'b10010011: begin
+                            ID_ALU_OP = 4'b0110; // xorcc -> A xor B for ALU modify icc
+                            ID_Instr_Alter_CC = 1;
+            end
+            8'b10000111: ID_ALU_OP = 4'b0111; // xorn -> A xnor B for ALU
+            8'b10010111: begin
+                            ID_ALU_OP = 4'b0111; // xorncc -> A xnor B for ALU modify icc
+                            ID_Instr_Alter_CC = 1;
+            end
+            // Shift Instructions
+            8'b10100101: ID_ALU_OP = 4'b1010; // sll -> shift left logical (A) B positions for ALU
+            8'b10100110: ID_ALU_OP = 4'b1011; // srl -> shift right logical (A) B positions for ALU
+            8'b10100111: ID_ALU_OP = 4'b1100; // sra -> shift right arithmetic (A) B positions for ALU
+            // TODO: Continue for load/store, call, jump, etc.
             default: ID_ALU_OP = 4'b1101;
         endcase
         // TODO: Set values for ID_RF_Enable, RAM_Enable, RAM_RW, RAM_SE, RAM_Size
