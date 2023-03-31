@@ -16,27 +16,6 @@ ROM Instruction_Memory(
     PC_Out,DataOut
 );
 
-
-
-
-
-
-General_Register IF_ID (
-    I21_0,
-    I29_0,
-    PC31_0,
-    I29,
-    I18_14,
-    I4_0,
-    I29_25,
-    I28_25,
-    I12_0,
-    I31_0, 
-    I29_25_2, //pal mux
-    InstuctionMemoryOut, PC , 
-    1, Clr, Clk
-);
-
 control_unit ControlUnit (
 I31, I30, I24, I13,
 ID_Load_Instr, ID_RF_Enable, 
@@ -48,24 +27,24 @@ ID_ALU_OP,
 I31_0
 );
 
+Pipeline_Register_IF_ID IF_ID (
+    I21_0, I29_0, PC31_0, I29, I18_14, I4_0, I29_25, I28_25, I12_0, I31_0, I29_25_2, // Ouputs
+    InstuctionMemoryOut, PC, 1, Clr, Clk // Inputs
+);
 
-
-General_Register ID_EX (
+Pipeline_Register_ID_EX ID_EX (
 Q,D,1,Clr,Clk
 );
 
-General_Register EX_MEM (
+Pipeline_Register_EX_MEM EX_MEM (
 Q,D,1,Clr,Clk
 );
 
-General_Register MEM_WB (
-Q,D,1,Clr,Clk
+Pipeline_Register_MEM_WB MEM_WB (
+    PW_WB, RD_OUT, ID_RF_enable_OUT, // Ouputs,
+    DO, MEM_RD, RD_IN, ID_RF_enable_IN, LE, Clr, Clk // Inputs
 );
-
-
 endmodule
-
-
 
 /************************************************************************************************************************************************************************************************************************************************************************/
 
@@ -185,12 +164,6 @@ bufif0 (O, A, S);
 bufif1 (O, B, S);
 endmodule
 
-
-
-
-
-
-
 module General_Register (output reg [31:0] Q, input [31:0] D, input //PC Y IF/ID
 LE, Clr, Clk);
 always @ (posedge Clk) //rising edge triggered Register
@@ -206,7 +179,6 @@ else if (LE) Q <= D;
 endmodule
 
 module Pipeline_Register_IF_ID (
-
     output reg [21:0] I21_0,
     output reg [29:0] I29_0,
     output reg [31:0] PC31_0,
@@ -222,7 +194,19 @@ module Pipeline_Register_IF_ID (
     input LE, Clr, Clk
     );
 always @ (posedge Clk) //rising edge triggered Register
-if (Clr) I31_0 <= 32'h00000000;
+if (Clr) begin //tar pendiente por si explota
+    I21_0 <= 22'b0; 
+    I29_0 <= 30'b0; 
+    PC31_0 <= 32'b0; 
+    I29 <= 1'b0; 
+    I18_14 <= 5'b0; 
+    I4_0 <= 5'b0; 
+    I29_25 <= 5'b0; 
+    I28_25 <= 4'b0; 
+    I12_0 <= 12'b0; 
+    I31_0 <= 32'b0; 
+    I29_25_2 <= 5'b0; 
+end
 else if (LE) begin
     I21_0 <= InstuctionMemoryOut[21:0]; 
     I29_0 <= InstuctionMemoryOut[29:0]; 
@@ -236,7 +220,8 @@ else if (LE) begin
     I31_0 <= InstuctionMemoryOut; 
     I29_25_2 <= InstuctionMemoryOut[29:25]; 
 end
-endmodule   
+endmodule
+  
 
 module Pipeline_Register_ID_EX (output reg [31:0] Q, input [31:0] D, input
 LE, Clr, Clk);
@@ -252,17 +237,26 @@ if (Clr) Q <= 32'h00000000;
 else if (LE) Q <= D; // estar pendiente cuando inicialice el LE para el testbench, ya que el registro PC lleva LE y los demas se le deberia asignar un valor constante de 1 (que siempre cargue los valores)
 endmodule
 
-module Pipeline_Register_MEM_WB (output reg [31:0] Q, input [31:0] D, input
-LE, Clr, Clk);
-always @ (posedge Clk) //rising edge triggered Register
-if (Clr) Q <= 32'h00000000;
-else if (LE) Q <= D; // estar pendiente cuando inicialice el LE para el testbench, ya que el registro PC lleva LE y los demas se le deberia asignar un valor constante de 1 (que siempre cargue los valores)
+module Pipeline_Register_MEM_WB (   
+    output reg [31:0] PW_WB,
+    output reg [4:0] RD_OUT,
+    output reg ID_RF_enable_OUT,
+    input [31:0] DO, // Data Memory Out
+    input [31:0] MEM_RD,
+    input [4:0] RD_IN,
+    input ID_RF_enable_IN, LE, Clr, Clk);
+always @ (posedge Clk) // Rising edge triggered Register
+if (Clr) begin
+    PW_WB <= 32'b0;
+    RD_OUT <= 4'b0;
+    ID_RF_enable_OUT <= 32'b0;
+end
+else if (LE) begin 
+    PW_WB <= MEM_WB;
+    RD_OUT <= RD_IN;
+    ID_RF_enable_OUT <= ID_RF_enable_IN;
+end
 endmodule
-
-
-
-
-
 
 module alu_sparc_component (output reg [31:0] Out, output reg Z, N, C, V, 
                             input [31:0] A, B, input [3:0] OP, input Cin);
