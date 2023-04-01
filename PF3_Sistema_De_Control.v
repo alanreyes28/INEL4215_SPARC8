@@ -71,36 +71,19 @@ Pipeline_Register_ID_EX ID_EX (
     ID_Jumpl_Instr_OUT_MUX,ID_Instr_Alter_CC_OUT_MUX,
     ID_Load_CallOrJumpl_Instr_OUT_MUX,
 /**********************************/
-
     Clr, Clk
 );
+
 Pipeline_Register_EX_MEM EX_MEM (
-    Out_In,
-    V_In,
-    Z_In,
-    C_In,
-    N_In, 
-    MX3_In,
-    RD_In,
-    ID_RF_enable_In,
-    RAW_Enable_In,
-    RAM_R/W_In,
-    RAM_SE_In,
-    RAM_Size_In,
-    ID_load_callOrJumpl_instr_In,
-    Out_Out,
-    MX3_Out,
-    PC_Out,
-    RD_Out,
-    ID_RF_enable_Out,
-    RAW_Enable_Out,
-    RAM_R/W_Out,
-    RAM_SE_Out,
-    RAM_Size_Out,
-    ID_load_callOrJumpl_instr_Out,
-    Clr, Clk
+    Out_Out, MX3_Out, PC_Out, RD_Out,
+    ID_RF_enable_Out, RAW_Enable_Out,
+    RAM_R/W_Out, RAM_SE_Out, RAM_Size_Out,
+    ID_load_callOrJumpl_instr_Out, // Outputs
+    Out_In, Z_In,V_In,N_In,C_In, MX3_In,
+    PC_In, RD_In, ID_RF_enable_In, RAW_Enable_In,
+    RAM_R/W_In, RAM_SE_In, RAM_Size_In,
+    ID_load_callOrJumpl_instr_In, Clr, Clk //Inputs
 );
-
 
 Pipeline_Register_MEM_WB MEM_WB (
     PW_WB, RD_OUT, ID_RF_enable_OUT, // Ouputs,
@@ -419,7 +402,17 @@ module Pipeline_Register_ID_EX (
 endmodule
 
 // Pipeline module for EX/MEM
-module Pipeline_Register_EX_MEM(input [31:0] Out_In,
+module Pipeline_Register_EX_MEM(output reg [31:0] Out_Out,
+                                output reg [31:0] MX3_Out,
+                                output reg [31:0] PC_Out,
+                                output reg [4:0]  RD_Out,
+                                output ID_RF_enable_Out,
+                                output RAW_Enable_Out,
+                                output RAM_R/W_Out,
+                                output RAM_SE_Out,
+                                output reg [1:0] RAM_Size_Out,
+                                output reg [1:0] ID_load_callOrJumpl_instr_Out,
+                                input [31:0] Out_In,
                                 input Z_In,V_In,N_In,C_In,
                                 input [31:0] MX3_In,
                                 input [31:0] PC_In,
@@ -430,17 +423,7 @@ module Pipeline_Register_EX_MEM(input [31:0] Out_In,
                                 input RAM_SE_In,
                                 input reg [1:0] RAM_Size_In,
                                 input reg [1:0] ID_load_callOrJumpl_instr_In,
-                                input Clr, Clk,
-                                output reg [31:0] Out_Out,
-                                output reg [31:0] MX3_Out,
-                                output reg [31:0] PC_Out,
-                                output reg [4:0]  RD_Out,
-                                output ID_RF_enable_Out,
-                                output RAW_Enable_Out,
-                                output RAM_R/W_Out,
-                                output RAM_SE_Out,
-                                output reg [1:0] RAM_Size_Out,
-                                output reg [1:0] ID_load_callOrJumpl_instr_Out);
+                                input Clr, Clk,);
     always @ (posedge Clk) begin //rising edge triggered Register
         if (Clr) begin
             Out_Out <= 32'h00000000;
