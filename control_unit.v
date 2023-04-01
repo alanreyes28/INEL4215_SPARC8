@@ -20,7 +20,7 @@ module control_unit_testbench;
     end
     initial begin
         $display("\nControl Unit results:");
-        $monitor("I31 = %b, I30 = %b, I24 = %b, I13 = %b, ID_Load_Instr = %b,\nID_Jumpl_Instr = %b, ID_B_Instr = %b, ID_Call_Instr = %b,\nID_Load_CallOrJumpl_Instr = %b, ID_ALU_OP = %b, ID_Instr_Alter_CC = %b\n", I31, I30, I24, I13, ID_Load_Instr, ID_Jumpl_Instr, ID_B_Instr, ID_Call_Instr, ID_Load_CallOrJumpl_Instr, ID_ALU_OP, ID_Instr_Alter_CC);
+        $monitor("I31 = %b, I30 = %b, I24 = %b, I13 = %b, ID_Load_Instr = %b,\nID_Jumpl_Instr = %b, ID_B_Instr = %b, ID_Call_Instr = %b,\nID_Load_CallOrJumpl_Instr = %b, ID_ALU_OP = %b, ID_Instr_Alter_CC = %b\nID_RF_Enable = %b, RAM_Enable = %b, RAM_RW = %b, RAM_SE = %b, RAM_Size = %b\n", I31, I30, I24, I13, ID_Load_Instr, ID_Jumpl_Instr, ID_B_Instr, ID_Call_Instr, ID_Load_CallOrJumpl_Instr, ID_ALU_OP, ID_Instr_Alter_CC, ID_RF_Enable, RAM_Enable, RAM_RW, RAM_SE, RAM_Size);
     end
 endmodule
 
@@ -115,9 +115,59 @@ module control_unit(output reg I31, I30, I24, I13,
             8'b10100101: ID_ALU_OP = 4'b1010; // sll -> shift left logical (A) B positions for ALU
             8'b10100110: ID_ALU_OP = 4'b1011; // srl -> shift right logical (A) B positions for ALU
             8'b10100111: ID_ALU_OP = 4'b1100; // sra -> shift right arithmetic (A) B positions for ALU
-            // TODO: Continue for load/store, call, jump, etc.
-            default: ID_ALU_OP = 4'b1101;
+            // Load Integer Instructions
+            8'b11001001: ID_ALU_OP = 4'b0000; // lsb -> A + B for ALU
+            8'b11001010: ID_ALU_OP = 4'b0000; // ldsh -> A + B for ALU
+            8'b11000000: ID_ALU_OP = 4'b0000; // ld -> A + B for ALU
+            8'b11000001: ID_ALU_OP = 4'b0000; // ldub -> A + B for ALU
+            8'b11000010: ID_ALU_OP = 4'b0000; // lduh -> A + B for ALU
+            8'b11000011: ID_ALU_OP = 4'b0000; // ldd -> A + B for ALU
+            8'b11001101: ID_ALU_OP = 4'b0000; // ldstub -> A + B for ALU
+            8'b11001111: ID_ALU_OP = 4'b0000; // swap -> A + B for ALU
+            // Store Integer Instructions
+            8'b11000101: ID_ALU_OP = 4'b0000; // stb -> A + B for ALU
+            8'b11000110: ID_ALU_OP = 4'b0000; // sth -> A + B for ALU
+            8'b11000100: ID_ALU_OP = 4'b0000; // st -> A + B for ALU
+            8'b11000111: ID_ALU_OP = 4'b0000; // std -> A + B for ALU
+            // Jumpl Instruction
+            8'b10111000: ID_ALU_OP = 4'b0000; // jumpl -> A + B for ALU
+            default: ID_ALU_OP = 4'b0000;
         endcase
-        // TODO: Set values for ID_RF_Enable, RAM_Enable, RAM_RW, RAM_SE, RAM_Size
+        if(Instr[31:30] == 2'b00 && Instr[24:22] == 3'b010) begin // Branch Instructions
+            ID_ALU_OP = 4'b0000; // A + B for ALU. Passing a default operation
+        end else if(Instr[31:30] == 2'b00 && Instr[24:22] == 3'b010) begin // Sethi Instructions
+            ID_ALU_OP = 4'b1110; // sethi -> B for ALU. Let the ALU choose what the src op2 handler provides as input in B
+        end else if(Instr[31:30] == 2'b01) begin // Call Instructions
+            ID_ALU_OP = 4'b0000; // A + B for ALU. Passing a default operation
+        end
+        // RAM Signals:
+        RAM_Enable = 1; // Always one if not there is no operation for RAM
+        if( opcode == 8'b11000101 ||  opcode == 8'b11000110 ||  opcode == 8'b11000100 || opcode == 8'b11000111) begin  // Check if it's a store instruction
+            RAM_RW = 1;
+        end else begin
+            RAM_RW = 0; // default case for load instruction
+        end
+        // RAM Size and Sign Extention (SE):
+        RAM_SE = 0; // Preliminary value
+        case(opcode)
+            // Load Integer Instructions
+            8'b11001001: begin
+                RAM_Size = 2'b00; // lsb -> byte
+                RAM_SE = 1;
+            end
+            8'b11001010: begin 
+                RAM_Size = 2'b01;// ldsh -> halfword
+                RAM_SE = 1;
+            end
+            8'b11000000: RAM_Size = 2'b10; // ld -> word
+            8'b11000001: RAM_Size = 2'b00; // ldub -> byte
+            8'b11000010: RAM_Size = 2'b01; // lduh -> halfword
+            8'b11001101: RAM_Size = 2'b00; // ldstub -> byte
+            // Store Integer Instructions
+            8'b11000101: RAM_Size = 2'b00; // stb -> byte
+            8'b11000110: RAM_Size = 2'b01; // sth -> halword
+            8'b11000100: RAM_Size = 2'b10; // st -> word
+        endcase
+        ID_RF_Enable = 1; // TODO: Check cases for when it is 0
     end
 endmodule
