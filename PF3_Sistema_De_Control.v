@@ -29,6 +29,14 @@ control_unit ControlUnit (
     I31_0 // Input
 );
 
+control_unit_mux_2x1 CU_MUX(
+    I31_OUT, I30_OUT, I24_OUT, I13_OUT, ID_Load_Instr_OUT, ID_RF_Enable_OUT,
+    ID_ALU_OP_OUT, ID_Jumpl_Instr_OUT, ID_Instr_Alter_CC_OUT, ID_Load_CallOrJumpl_Instr_OUT, // Outputs
+    I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable, 
+    ID_ALU_OP, ID_Jumpl_Instr, ID_Instr_Alter_CC, 
+    ID_Load_CallOrJumpl_Instr, select // Inputs
+); 
+
 Pipeline_Register_IF_ID IF_ID (
     I21_0, I29_0, PC31_0, I29, I18_14, I4_0,
     I29_25, I28_25, I12_0, I31_0, I29_25_2, // Outputs
@@ -250,9 +258,40 @@ module ROM (input [8:0] address, output reg [31:0] DataOut);
 endmodule
 
 // Multiplexer module for Control Unit
-module mux_2x1 (output tri O, input A, B, S); //tiene como entrada el 0 y el control Signal
-    bufif0 (O, A, S);
-    bufif1 (O, B, S);
+module ctrl_unit_mux_2x1(output reg I31_OUT, I30_OUT, I24_OUT, I13_OUT, ID_Load_Instr_OUT, ID_RF_Enable_OUT,
+            output reg [3:0] ID_ALU_OP_OUT,
+            output reg ID_Jumpl_Instr_OUT, ID_Instr_Alter_CC_OUT,
+            output reg [1:0] ID_Load_CallOrJumpl_Instr_OUT,
+            input I31_IN, I30_IN, I24_IN, I13_IN, ID_Load_Instr_IN, ID_RF_Enable_IN, 
+            input [3:0] ID_ALU_OP_IN,
+            input ID_Jumpl_Instr_IN, ID_Instr_Alter_CC_IN,
+            input [1:0] ID_Load_CallOrJumpl_Instr_IN,
+            input select);
+    always @ (*) begin
+        if(select) begin
+            I31_OUT = I31_IN;
+            I30_OUT = I30_IN;
+            I24_OUT = I24_IN;
+            I13_OUT = I13_IN;
+            ID_Load_Instr_OUT = ID_Load_Instr_IN;
+            ID_RF_Enable_OUT = ID_RF_Enable_IN;
+            ID_ALU_OP_OUT = ID_ALU_OP_IN;
+            ID_Jumpl_Instr_OUT = ID_Jumpl_Instr_IN;
+            ID_Instr_Alter_CC_OUT = ID_Instr_Alter_CC_IN;
+            ID_Load_CallOrJumpl_Instr_OUT = ID_Load_CallOrJumpl_Instr_IN;
+        end else begin
+            I31_OUT = 1'b0;
+            I30_OUT = 1'b0;
+            I24_OUT = 1'b0;
+            I13_OUT = 1'b0;
+            ID_Load_Instr_OUT = 1'b0;
+            ID_RF_Enable_OUT = 1'b0;
+            ID_ALU_OP_OUT = 4'b0;
+            ID_Jumpl_Instr_OUT = 1'b0;
+            ID_Instr_Alter_CC_OUT = 1'b0;
+            ID_Load_CallOrJumpl_Instr_OUT = 2'b0;
+        end
+    end
 endmodule
 
 // Register module for PC
