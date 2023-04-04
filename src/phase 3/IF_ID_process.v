@@ -11,7 +11,6 @@ reg Z, N, C, V, Cin;
 wire  I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable,RAM_Enable, RAM_RW, RAM_SE,	ID_Jumpl_Instr, ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr; 
 wire [1:0] RAM_Size, ID_Load_CallOrJumpl_Instr;
 wire [3:0] ID_ALU_OP;
-wire [31:0] I31_0;
 
 /// Parameters for Multiplexer
 wire I31_OUT, I30_OUT, I24_OUT, I13_OUT, ID_Load_Instr_OUT, ID_RF_Enable_OUT,ID_Jumpl_Instr_OUT, ID_Instr_Alter_CC_OUT;
@@ -28,6 +27,20 @@ wire [4:0] I18_14, I4_0, I29_25,I29_25_2;
 wire [3:0] I28_25; 
 wire [12:0] I12_0;
 
+
+// Parameters for ID/EX
+wire [31:0] MX1_OUT, MX2_OUT, MX3_OUT, PC_OUT;
+wire [12:0] I12_0_OUT;
+wire [4:0] RD4_0_OUT; 
+wire [3:0] ID_ALU_OP_OUT_REG;
+wire I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG, ID_Load_Instr_OUT_REG, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG, ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG;
+wire [1:0] RAM_Size_OUT_REG, ID_Load_CallOrJumpl_Instr_OUT_REG;
+reg [31:0] MX1_IN,MX2_IN,MX3_IN,PC_IN;
+reg [12:0] I12_0_IN;
+reg [4:0] RD4_0_IN;
+reg I31_OUT_MUX,I30_OUT_MUX,I24_OUT_MUX,I13_OUT_MUX, ID_Load_Instr_OUT_MUX, ID_RF_Enable_OUT_MUX, RAM_Enable_OUT_MUX,RAM_RW_OUT_MUX,RAM_SE_OUT_MUX, ID_Jumpl_Instr_OUT_MUX,ID_Instr_Alter_CC_OUT_MUX;
+reg [3:0] ID_ALU_OP_OUT_MUX;
+reg [1:0] RAM_Size_OUT_MUX, ID_Load_CallOrJumpl_Instr_OUT_MUX;
 
 // Parameters for Preload of ROM
 wire [31:0] PC_Out;
@@ -60,7 +73,7 @@ control_unit ControlUnit (
     RAM_Enable, RAM_RW, RAM_SE, ID_Jumpl_Instr,
     ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr,
     RAM_Size, ID_Load_CallOrJumpl_Instr, ID_ALU_OP, // Outputs
-    I31_0 // Input
+    I31_0_2 // Input
 );
 
 ctrl_unit_mux_2x1 CU_MUX(
@@ -77,6 +90,45 @@ Pipeline_Register_IF_ID IF_ID (
     DataOut, PC_Out, Clr, Clk // Inputs
 );
 
+Pipeline_Register_ID_EX ID_EX (
+    //Outputs Parte Amarilla
+/**********************************/
+    MX1_OUT, MX2_OUT,MX3_OUT,PC_OUT,
+    I12_0_OUT,
+    RD4_0_OUT,
+/**********************************/
+
+    //Outputs de parte Gris
+/**********************************/
+    I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG,
+    ID_Load_Instr_OUT_REG,
+    ID_ALU_OP_OUT_REG,
+    ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG,
+    RAM_Size_OUT_REG,
+    ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG,
+    ID_Load_CallOrJumpl_Instr_OUT_REG,
+/**********************************/
+
+    //Inputs Parte Amarilla
+/**********************************/
+    MX1_IN,MX2_IN,MX3_IN,PC_IN,
+    I12_0, //pendiente a ver si el nombre de esto causa problemas (no creo)
+    RD4_0_IN,
+/**********************************/
+
+    //Inputs Parte Gris
+/**********************************/
+    I31_OUT,I30_OUT,I24_OUT,I13_OUT,
+    ID_Load_Instr_OUT,
+    ID_ALU_OP_OUT,
+    ID_RF_Enable_OUT,RAM_Enable,RAM_RW,RAM_SE,
+    RAM_Size,
+    ID_Jumpl_Instr_OUT,ID_Instr_Alter_CC_OUT,
+    ID_Load_CallOrJumpl_Instr_OUT,
+/**********************************/
+    Clr, Clk
+);
+
 // Preload Instruction Memory
 reg [8:0] InstrIn;
 initial begin
@@ -90,7 +142,7 @@ initial begin
     $fclose(file);
 end
 
-initial #48 $finish;
+initial #96 $finish;
   
 initial begin
   Cin = 1;
@@ -114,7 +166,7 @@ end
 
 initial begin
   $display("Results:");
-  $monitor("Clk = %b, Clr = %b, LE = %b, nPC_Out = %b , PC_Out = %b, DataOut = %b, Intr from IF/ID to CU: %b", Clk, Clr, LE, nPC_Out, PC_Out, DataOut, I31_0_2);
+  $monitor("Instr going to CU = %b, PC = %d, nPC = %d\nOuputs of the Control Unit:\nI31 = %b, I30 = %b, I24 = %b, I13 = %b, ID_Load_Instr = %b, ID_RF_Enable = %b, RAM_Enable = %b, RAM_RW = %b, RAM_SE = %b, ID_Jumpl_Instr = %b, ID_Instr_Alter_CC = %b, ID_B_Instr = %b, ID_Call_Instr = %b, RAM_Size = %b, ID_Load_CallOrJumpl_Instr = %b, ID_ALU_OP = %b\nOutputs of EX stage:\nI31_OUT_REG = %b,I30_OUT_REG = %b,I24_OUT_REG = %b,I13_OUT_REG = %b, ID_Load_Instr_OUT_REG, = %b, ID_ALU_OP_OUT_REG = %b, ID_RF_Enable_OUT_REG = %b, RAM_Enable_OUT_REG = %b,RAM_RW_OUT_REG = %b,RAM_SE_OUT_REG = %b, RAM_Size_OUT_REG = %b, ID_Jumpl_Instr_OUT_REG = %b,ID_Instr_Alter_CC_OUT_REG = %b, ID_Load_CallOrJumpl_Instr_OUT_REG = %b", I31_0_2, PC_Out, nPC_Out, I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable, RAM_Enable, RAM_RW, RAM_SE, ID_Jumpl_Instr, ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr, RAM_Size, ID_Load_CallOrJumpl_Instr, ID_ALU_OP,    I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG,ID_Load_Instr_OUT_REG,ID_ALU_OP_OUT_REG, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG,RAM_Size_OUT_REG,ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG,ID_Load_CallOrJumpl_Instr_OUT_REG);
 end
 
 endmodule
@@ -232,7 +284,7 @@ module control_unit(output reg I31, I30, I24, I13,
         endcase
         if(Instr[31:30] == 2'b00 && Instr[24:22] == 3'b010) begin // Branch Instructions
             ID_ALU_OP = 4'b0000; // A + B for ALU. Passing a default operation
-        end else if(Instr[31:30] == 2'b00 && Instr[24:22] == 3'b010) begin // Sethi Instructions
+        end else if(Instr[31:30] == 2'b00 && Instr[24:22] == 3'b100) begin // Sethi Instructions
             ID_ALU_OP = 4'b1110; // sethi -> B for ALU. Let the ALU choose what the src op2 handler provides as input in B
         end else if(Instr[31:30] == 2'b01) begin // Call Instructions
             ID_ALU_OP = 4'b0000; // A + B for ALU. Passing a default operation
@@ -288,7 +340,7 @@ module ctrl_unit_mux_2x1(output reg I31_OUT, I30_OUT, I24_OUT, I13_OUT, ID_Load_
             input [1:0] ID_Load_CallOrJumpl_Instr_IN,
             input select);
     always @ (*) begin
-        if(select) begin
+        if(select == 1'b0) begin // Pass Control Unit values when select is 0
             I31_OUT = I31_IN;
             I30_OUT = I30_IN;
             I24_OUT = I24_IN;
@@ -387,7 +439,7 @@ module Pipeline_Register_ID_EX (
             /**********************************/
             output reg I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG,
             output reg ID_Load_Instr_OUT_REG,
-            output reg [4:0] ID_ALU_OP_OUT_REG,
+  			output reg [3:0] ID_ALU_OP_OUT_REG,
             output reg ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG,
             output reg [1:0] RAM_Size_OUT_REG,
             output reg ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG,
@@ -405,7 +457,7 @@ module Pipeline_Register_ID_EX (
             /**********************************/
             input I31_OUT_MUX,I30_OUT_MUX,I24_OUT_MUX,I13_OUT_MUX,
             input ID_Load_Instr_OUT_MUX,
-            input [4:0] ID_ALU_OP_OUT_MUX,
+  			input [3:0] ID_ALU_OP_OUT_MUX,
             input ID_RF_Enable_OUT_MUX, RAM_Enable_OUT_MUX,RAM_RW_OUT_MUX,RAM_SE_OUT_MUX,
             input [1:0] RAM_Size_OUT_MUX,
             input ID_Jumpl_Instr_OUT_MUX,ID_Instr_Alter_CC_OUT_MUX,
