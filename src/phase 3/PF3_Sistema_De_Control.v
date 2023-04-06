@@ -1,11 +1,76 @@
 // Control System Testbench
 module Sistema_De_Control_tb;
 
+// Parameters for Registers
+reg select,Clr,Clk,LE;
+
+wire [31:0] nPC_Out,Adder_Out , DataOut;
+reg Z, N, C, V, Cin;
+
+// Parameters for CU
+wire  I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable,RAM_Enable, RAM_RW, RAM_SE,	ID_Jumpl_Instr, ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr; 
+wire [1:0] RAM_Size, ID_Load_CallOrJumpl_Instr;
+wire [3:0] ID_ALU_OP;
+
+/// Parameters for Multiplexer
+wire I31_OUT, I30_OUT, I24_OUT, I13_OUT, ID_Load_Instr_OUT, ID_RF_Enable_OUT,ID_Jumpl_Instr_OUT, ID_Instr_Alter_CC_OUT;
+wire [3:0] ID_ALU_OP_OUT; 
+wire [1:0] ID_Load_CallOrJumpl_Instr_OUT; 
+
+
+// Parameters for IF/ID
+wire [21:0] I21_0;
+wire [29:0] I29_0;
+wire [31:0] PC31_0, I31_0_2;
+wire I29;
+wire [4:0] I18_14, I4_0, I29_25,I29_25_2;
+wire [3:0] I28_25; 
+wire [12:0] I12_0;
+
+
+// Parameters for ID/EX
+wire [31:0] MX1_OUT, MX2_OUT, MX3_OUT, PC_OUT;
+wire [12:0] I12_0_OUT;
+wire [4:0] RD4_0_OUT; 
+wire [3:0] ID_ALU_OP_OUT_REG;
+wire I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG, ID_Load_Instr_OUT_REG, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG, ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG;
+wire [1:0] RAM_Size_OUT_REG, ID_Load_CallOrJumpl_Instr_OUT_REG;
+reg [31:0] MX1_IN,MX2_IN,MX3_IN,PC_IN;
+reg [12:0] I12_0_IN;
+reg [4:0] RD4_0_IN;
+reg I31_OUT_MUX,I30_OUT_MUX,I24_OUT_MUX,I13_OUT_MUX, ID_Load_Instr_OUT_MUX, ID_RF_Enable_OUT_MUX, RAM_Enable_OUT_MUX,RAM_RW_OUT_MUX,RAM_SE_OUT_MUX, ID_Jumpl_Instr_OUT_MUX,ID_Instr_Alter_CC_OUT_MUX;
+reg [3:0] ID_ALU_OP_OUT_MUX;
+reg [1:0] RAM_Size_OUT_MUX, ID_Load_CallOrJumpl_Instr_OUT_MUX;
+
+// Parameters for EX/MEM
+wire [31:0] Out_Out;
+wire [31:0] PC_OUT_MEM;
+wire [31:0] MX3_MEM_Out;
+wire [4:0]  RD_Out;
+wire ID_RF_enable_MEM_Out;
+wire RAW_Enable_Out;
+wire RAM_RW_Out;
+wire RAM_SE_Out;
+wire [1:0] RAM_Size_Out;
+wire [1:0] ID_load_callOrJumpl_instr_MEM_Out;
+reg [31:0] Out_In;
+reg Z_In,V_In,N_In,C_In;
+reg [31:0] MX3_MEM_In;
+reg [31:0] PC_MEM_In;
+reg [4:0] RD_MEM_In;
+  
+//Parameters for MEM/WB
+wire [31:0] PW_WB;
+wire [4:0] RD_OUT_WB;
+wire ID_RF_enable_OUT_WB;
+reg [31:0] DO;
+reg [31:0] MEM_RD;
+
 // Parameters for Preload of ROM
-reg [8:0] PC_Out;
+wire [31:0] PC_Out;
 reg [31:0] DataIn;
 integer file, code;
-wire [31:0] DataOut;
+
 
 Special_Register nPC (
     nPC_Out, // Output
@@ -19,7 +84,7 @@ General_Register PC (
 
 alu_sparc_component Adder (
     Adder_Out, Z, N, C, V, // Outputs
-    PC_Out, 4, 4'b0000,  Cin // Inputs
+    PC_Out, 32'b00000000000000000000000000000100, 4'b0000,  Cin // Inputs
  );
 
 ROM Instruction_Memory(
@@ -27,42 +92,12 @@ ROM Instruction_Memory(
     DataOut // Output
 );
 
-// Preload Instruction Memory
-initial begin
-    file = $fopen("control_system_test.txt","r+b");
-    PC_Out =  8'b00000000;
-        while (!$feof(file)) begin 
-            code = $fscanf(file, "%b", DataIn);
-            Instruction_Memory.mem[PC_Out] = DataIn;
-            PC_Out = PC_Out + 1;
-        end
-    $fclose(file);
-end
-initial begin 
-    PC_Out = 0;  
-  	#1 PC_Out = 4;
-    #2 PC_Out = 8;
-    #3 PC_Out = 12;
-  	#4 PC_Out = 16;
-    #5 PC_Out = 20;
-    #6 PC_Out = 24;
-    #7 PC_Out = 28;
-    #8 PC_Out = 32;
-    #9 PC_Out = 36;
-  	#10 PC_Out = 40;
-    #11 PC_Out = 44;
-    #12 PC_Out = 48;
-end
-initial begin
-  $monitor("Adress (PC_Out) = %d, Instr = %b", PC_Out, DataOut);
-end // End of Instruction Memory Preload
-
 control_unit ControlUnit (
     I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable, 
     RAM_Enable, RAM_RW, RAM_SE, ID_Jumpl_Instr,
     ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr,
     RAM_Size, ID_Load_CallOrJumpl_Instr, ID_ALU_OP, // Outputs
-    I31_0 // Input
+    I31_0_2 // Input
 );
 
 ctrl_unit_mux_2x1 CU_MUX(
@@ -75,14 +110,14 @@ ctrl_unit_mux_2x1 CU_MUX(
 
 Pipeline_Register_IF_ID IF_ID (
     I21_0, I29_0, PC31_0, I29, I18_14, I4_0,
-    I29_25, I28_25, I12_0, I31_0, I29_25_2, // Outputs
-    InstuctionMemoryOut, PC, LE, Clr, Clk // Inputs
+    I29_25, I28_25, I12_0, I31_0_2, I29_25_2, // Outputs
+    DataOut, PC_Out, Clr, Clk // Inputs
 );
 
 Pipeline_Register_ID_EX ID_EX (
     //Outputs Parte Amarilla
 /**********************************/
-    MX1_OUT, MX2_OUT,MX3_OUT,PC_OUT
+    MX1_OUT, MX2_OUT,MX3_OUT,PC_OUT,
     I12_0_OUT,
     RD4_0_OUT,
 /**********************************/
@@ -101,38 +136,79 @@ Pipeline_Register_ID_EX ID_EX (
     //Inputs Parte Amarilla
 /**********************************/
     MX1_IN,MX2_IN,MX3_IN,PC_IN,
-    I12_0_IN, //pendiente a ver si el nombre de esto causa problemas (no creo)
+    I12_0, //pendiente a ver si el nombre de esto causa problemas (no creo)
     RD4_0_IN,
 /**********************************/
 
     //Inputs Parte Gris
 /**********************************/
-    I31_OUT_MUX,I30_OUT_MUX,I24_OUT_MUX,I13_OUT_MUX,
-    ID_Load_Instr_OUT_MUX,
-    ID_ALU_OP_OUT_MUX,
-    ID_RF_Enable_OUT_MUX, RAM_Enable_OUT_MUX,RAM_RW_OUT_MUX,RAM_SE_OUT_MUX,
-    RAM_Size_OUT_MUX,
-    ID_Jumpl_Instr_OUT_MUX,ID_Instr_Alter_CC_OUT_MUX,
-    ID_Load_CallOrJumpl_Instr_OUT_MUX,
+    I31_OUT,I30_OUT,I24_OUT,I13_OUT,
+    ID_Load_Instr_OUT,
+    ID_ALU_OP_OUT,
+    ID_RF_Enable_OUT,RAM_Enable,RAM_RW,RAM_SE,
+    RAM_Size,
+    ID_Jumpl_Instr_OUT,ID_Instr_Alter_CC_OUT,
+    ID_Load_CallOrJumpl_Instr_OUT,
 /**********************************/
     Clr, Clk
 );
 
 Pipeline_Register_EX_MEM EX_MEM (
-    Out_Out, MX3_Out, PC_Out, RD_Out,
-    ID_RF_enable_Out, RAW_Enable_Out,
-    RAM_R/W_Out, RAM_SE_Out, RAM_Size_Out,
-    ID_load_callOrJumpl_instr_Out, // Outputs
-    Out_In, Z_In,V_In,N_In,C_In, MX3_In,
-    PC_In, RD_In, ID_RF_enable_In, RAW_Enable_In,
-    RAM_R/W_In, RAM_SE_In, RAM_Size_In,
-    ID_load_callOrJumpl_instr_In, Clr, Clk //Inputs
+    Out_Out, MX3_MEM_Out, PC_OUT_MEM, RD_Out,
+    ID_RF_enable_MEM_Out, RAW_Enable_Out,
+    RAM_RW_Out, RAM_SE_Out, RAM_Size_Out,
+    ID_load_callOrJumpl_instr_MEM_Out, // Outputs
+    Out_In, Z_In,V_In,N_In,C_In, MX3_MEM_In,
+    PC_MEM_In, RD_MEM_In, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,
+    RAM_RW_OUT_REG, RAM_SE_OUT_REG, RAM_Size_OUT_REG,
+    ID_Load_CallOrJumpl_Instr_OUT_REG, Clr, Clk //Inputs
 );
 
-Pipeline_Register_MEM_WB MEM_WB (
-    PW_WB, RD_OUT, ID_RF_enable_OUT, // Ouputs,
-    DO, MEM_RD, RD_IN, ID_RF_enable_IN, Clr, Clk // Inputs
-);
+Pipeline_Register_MEM_WB MEM_WB(
+  	PW_WB,RD_OUT_WB,ID_RF_enable_OUT_WB, //Outputs
+    DO,MEM_RD,RD_Out,ID_RF_enable_MEM_Out, Clr, Clk //Inputs
+); 
+
+// Preload Instruction Memory
+reg [8:0] InstrIn;
+initial begin
+    file = $fopen("control_system_test.txt","r+b");
+    InstrIn =  8'b00000000;
+        while (!$feof(file)) begin 
+            code = $fscanf(file, "%b", DataIn);
+            Instruction_Memory.mem[InstrIn] = DataIn;
+            InstrIn = InstrIn + 1;
+        end
+    $fclose(file);
+end
+
+initial #48 $finish;
+  
+initial begin
+  Cin = 1;
+end
+
+initial begin
+  Clk = 0;
+  forever #1 Clk = ~Clk; // Change every 1 unit of time to complete simulation in 48 time units
+end
+
+initial begin
+  Clr = 1'b1;
+  #1 Clr = 1'b0;
+end
+
+initial begin
+  LE = 1'b1;
+  select = 1'b0; 
+  #40 select = 1'b1;
+end
+
+initial begin
+  $display("PF3 Control System Results:");
+  $monitor("-Time Unit: %0t\nInstr going to CU = %b, PC = %d, nPC = %d\n-Ouputs of the Control Unit:\nI31 = %b, I30 = %b, I24 = %b, I13 = %b, ID_Load_Instr = %b, ID_RF_Enable = %b, RAM_Enable = %b, RAM_RW = %b, RAM_SE = %b, ID_Jumpl_Instr = %b, ID_Instr_Alter_CC = %b, ID_B_Instr = %b, ID_Call_Instr = %b, RAM_Size = %b, ID_Load_CallOrJumpl_Instr = %b, ID_ALU_OP = %b\n-Outputs of EX stage:\nI31_OUT_REG = %b,I30_OUT_REG = %b,I24_OUT_REG = %b,I13_OUT_REG = %b, ID_Load_Instr_OUT_REG, = %b, ID_ALU_OP_OUT_REG = %b, ID_RF_Enable_OUT_REG = %b, RAM_Enable_OUT_REG = %b,RAM_RW_OUT_REG = %b,RAM_SE_OUT_REG = %b, RAM_Size_OUT_REG = %b, ID_Jumpl_Instr_OUT_REG = %b,ID_Instr_Alter_CC_OUT_REG = %b, ID_Load_CallOrJumpl_Instr_OUT_REG = %b\n-Outputs of MEM stage:\nID_RF_enable_MEM_Out = %b, RAW_Enable_Out = %b, RAM_RW_Out = %b, RAM_SE_Out = %b, RAM_Size_Out = %b, ID_load_callOrJumpl_instr_MEM_Out = %b\n-Outputs of WB Stage:\nID_RF_enable_OUT_WB = %d \n", $time,I31_0_2, PC_Out, nPC_Out,   I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable, RAM_Enable, RAM_RW, RAM_SE, ID_Jumpl_Instr, ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr, RAM_Size, ID_Load_CallOrJumpl_Instr, ID_ALU_OP,   I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG,ID_Load_Instr_OUT_REG,ID_ALU_OP_OUT_REG, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG,RAM_Size_OUT_REG,ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG,ID_Load_CallOrJumpl_Instr_OUT_REG,   ID_RF_enable_MEM_Out, RAW_Enable_Out, RAM_RW_Out, RAM_SE_Out, RAM_Size_Out, ID_load_callOrJumpl_instr_MEM_Out,ID_RF_enable_OUT_WB);
+end
+
 endmodule
 
 /************************************************************************************************************************************************************************************************************************************************************************/
@@ -248,7 +324,7 @@ module control_unit(output reg I31, I30, I24, I13,
         endcase
         if(Instr[31:30] == 2'b00 && Instr[24:22] == 3'b010) begin // Branch Instructions
             ID_ALU_OP = 4'b0000; // A + B for ALU. Passing a default operation
-        end else if(Instr[31:30] == 2'b00 && Instr[24:22] == 3'b010) begin // Sethi Instructions
+        end else if(Instr[31:30] == 2'b00 && Instr[24:22] == 3'b100) begin // Sethi Instructions
             ID_ALU_OP = 4'b1110; // sethi -> B for ALU. Let the ALU choose what the src op2 handler provides as input in B
         end else if(Instr[31:30] == 2'b01) begin // Call Instructions
             ID_ALU_OP = 4'b0000; // A + B for ALU. Passing a default operation
@@ -304,7 +380,7 @@ module ctrl_unit_mux_2x1(output reg I31_OUT, I30_OUT, I24_OUT, I13_OUT, ID_Load_
             input [1:0] ID_Load_CallOrJumpl_Instr_IN,
             input select);
     always @ (*) begin
-        if(select) begin
+        if(select == 1'b0) begin // Pass Control Unit values when select is 0
             I31_OUT = I31_IN;
             I30_OUT = I30_IN;
             I24_OUT = I24_IN;
@@ -332,7 +408,7 @@ endmodule
 
 // Register module for PC
 module General_Register (output reg [31:0] Q, input [31:0] D, input LE, Clr, Clk);
-    always @ (posedge Clk) begin //rising edge triggered Register
+    always @ (posedge Clk, Clr) begin //rising edge triggered Register
         if (Clr) Q <= 32'b00000000000000000000000000000000;
         else if (LE) Q <= D; // estar pendiente cuando inicialice el LE para el testbench, ya que el registro PC lleva LE y los demas se le deberia asignar un valor constante de 1 (que siempre cargue los valores)
     end
@@ -340,7 +416,7 @@ endmodule
 
 // Register module for nPC
 module Special_Register (output reg [31:0] Q, input [31:0] D, input LE, Clr, Clk);
-    always @ (posedge Clk) begin//rising edge triggered Register
+    always @ (posedge Clk, Clr) begin//rising edge triggered Register
         if (Clr) Q <=  32'b00000000000000000000000000000100; //produce un 4 binario cuando es reseteado
         else if (LE) Q <= D;
     end
@@ -350,17 +426,17 @@ endmodule
 module Pipeline_Register_IF_ID (output reg [21:0] I21_0,
                                 output reg [29:0] I29_0,
                                 output reg [31:0] PC31_0,
-                                output reg [29] I29,
-                                output reg [18:14] I18_14,
+                                output reg  I29,
+                                output reg [4:0] I18_14,
                                 output reg [4:0] I4_0,
-                                output reg [29:25] I29_25,
-                                output reg [28:25] I28_25,
+                                output reg [4:0] I29_25,
+                                output reg [3:0] I28_25,
                                 output reg [12:0] I12_0,
                                 output reg [31:0] I31_0, 
-                                output reg [29:25] I29_25_2, //pal mux
+                                output reg [4:0] I29_25_2, //pal mux
                                 input [31:0] InstuctionMemoryOut, PC , 
                                 input  Clr, Clk);
-    always @ (posedge Clk) begin//rising edge triggered Register
+    always @ (posedge Clk, Clr) begin//rising edge triggered Register
         if (Clr) begin //tar pendiente por si explota
             I21_0 <= 22'b0; 
             I29_0 <= 30'b0; 
@@ -394,19 +470,19 @@ endmodule
 module Pipeline_Register_ID_EX (
                 //Outputs Parte Amarilla
             /**********************************/
-            output reg [31:0] MX1_OUT, MX2_OUT,MX3_OUT,PC_OUT
+  			output reg [31:0] MX1_OUT, MX2_OUT,MX3_OUT,PC_OUT,
             output reg [12:0] I12_0_OUT,
             output reg [4:0] RD4_0_OUT,
             /**********************************/
 
                 //Outputs de parte Gris
             /**********************************/
-            output I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG,
-            output ID_Load_Instr_OUT_REG,
-            output reg [4:0] ID_ALU_OP_OUT_REG,
-            output ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG,
+            output reg I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG,
+            output reg ID_Load_Instr_OUT_REG,
+  			output reg [3:0] ID_ALU_OP_OUT_REG,
+            output reg ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG,
             output reg [1:0] RAM_Size_OUT_REG,
-            output ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG,
+            output reg ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG,
             output reg [1:0] ID_Load_CallOrJumpl_Instr_OUT_REG,
             /**********************************/
 
@@ -421,14 +497,14 @@ module Pipeline_Register_ID_EX (
             /**********************************/
             input I31_OUT_MUX,I30_OUT_MUX,I24_OUT_MUX,I13_OUT_MUX,
             input ID_Load_Instr_OUT_MUX,
-            input [4:0] ID_ALU_OP_OUT_MUX,
+  			input [3:0] ID_ALU_OP_OUT_MUX,
             input ID_RF_Enable_OUT_MUX, RAM_Enable_OUT_MUX,RAM_RW_OUT_MUX,RAM_SE_OUT_MUX,
             input [1:0] RAM_Size_OUT_MUX,
             input ID_Jumpl_Instr_OUT_MUX,ID_Instr_Alter_CC_OUT_MUX,
             input [1:0] ID_Load_CallOrJumpl_Instr_OUT_MUX,
             /**********************************/
             input Clr, Clk);
-    always @ (posedge Clk) begin //rising edge triggered Register
+    always @ (posedge Clk, Clr) begin //rising edge triggered Register
         if (Clr)begin 
             MX1_OUT<= 32'b0;
             MX2_OUT<= 32'b0;
@@ -481,10 +557,10 @@ module Pipeline_Register_EX_MEM(output reg [31:0] Out_Out,
                                 output reg [31:0] MX3_Out,
                                 output reg [31:0] PC_Out,
                                 output reg [4:0]  RD_Out,
-                                output ID_RF_enable_Out,
-                                output RAW_Enable_Out,
-                                output RAM_R/W_Out,
-                                output RAM_SE_Out,
+                                output reg ID_RF_enable_Out,
+                                output reg RAW_Enable_Out,
+                                output reg RAM_RW_Out,
+                                output reg RAM_SE_Out,
                                 output reg [1:0] RAM_Size_Out,
                                 output reg [1:0] ID_load_callOrJumpl_instr_Out,
                                 input [31:0] Out_In,
@@ -494,33 +570,33 @@ module Pipeline_Register_EX_MEM(output reg [31:0] Out_Out,
                                 input [4:0] RD_In,
                                 input ID_RF_enable_In,
                                 input RAW_Enable_In,
-                                input RAM_R/W_In,
+                                input RAM_RW_In,
                                 input RAM_SE_In,
-                                input reg [1:0] RAM_Size_In,
-                                input reg [1:0] ID_load_callOrJumpl_instr_In,
-                                input Clr, Clk,);
-    always @ (posedge Clk) begin //rising edge triggered Register
+                                input [1:0] RAM_Size_In,
+                                input [1:0] ID_load_callOrJumpl_instr_In,
+                                input Clr, Clk);
+    always @ (posedge Clk, Clr) begin //rising edge triggered Register
         if (Clr) begin
             Out_Out <= 32'h00000000;
             MX3_Out <= 32'h00000000;
             PC_Out <= 32'h00000000;
-            RD_Out <= 4'h0000;
+            RD_Out <= 4'b0000;
             ID_RF_enable_Out <= 1'b0;
             RAW_Enable_Out <= 1'b0;
-            RAM_R/W_Out <= 1'b0;
-            RAM_R/W_Out <= 1'b0;
+            RAM_RW_Out <= 1'b0;
+            RAM_RW_Out <= 1'b0;
             RAM_SE_Out  <= 1'b0;
             RAM_Size_Out <= 2'b00;
             ID_load_callOrJumpl_instr_Out <= 2'b00;
         end
         else begin
-            Out_Out <= Out_In[31;0]; // estar pendiente cuando inicialice el LE para el testbench, ya que el registro PC lleva LE y los demas se le deberia asignar un valor constante de 1 (que siempre cargue los valores)
-            PC_Out <= PC_In[31;0];
-            MX3_Out <= MX3_In[31:0];
-            RD_Out <= RD_In[31:0];
+            Out_Out <= Out_In[31:0]; // estar pendiente cuando inicialice el LE para el testbench, ya que el registro PC lleva LE y los demas se le deberia asignar un valor constante de 1 (que siempre cargue los valores)
+            PC_Out <= PC_In;
+            MX3_Out <= MX3_In;
+            RD_Out <= RD_In;
             ID_RF_enable_Out <= ID_RF_enable_In;
             RAW_Enable_Out <= RAW_Enable_In;
-            RAM_R/W_Out <=RAM_R/W_In;
+            RAM_RW_Out <=RAM_RW_In;
             RAM_SE_Out <= RAM_SE_In;
             RAM_Size_Out <= RAM_Size_In[1:0];
             ID_load_callOrJumpl_instr_Out <= ID_load_callOrJumpl_instr_In[1:0];
@@ -536,14 +612,14 @@ module Pipeline_Register_MEM_WB(output reg [31:0] PW_WB,
                                 input [31:0] MEM_RD,
                                 input [4:0] RD_IN,
                                 input ID_RF_enable_IN, Clr, Clk);
-    always @ (posedge Clk) begin // Rising edge triggered Register
+    always @ (posedge Clk, Clr) begin // Rising edge triggered Register
         if (Clr) begin
             PW_WB <= 32'b0;
             RD_OUT <= 4'b0;
             ID_RF_enable_OUT <= 32'b0;
         end
         else begin 
-            PW_WB <= MEM_WB;
+            PW_WB <= MEM_RD;
             RD_OUT <= RD_IN;
             ID_RF_enable_OUT <= ID_RF_enable_IN;
         end
