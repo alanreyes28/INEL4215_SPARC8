@@ -206,7 +206,7 @@ end
 
 initial begin
   $display("PF3 Control System Results:");
-  $monitor("-Time Unit: %0t\nInstr going to CU = %b, PC = %d, nPC = %d\n-Ouputs of the Control Unit:\nI31 = %b, I30 = %b, I24 = %b, I13 = %b, ID_Load_Instr = %b, ID_RF_Enable = %b, RAM_Enable = %b, RAM_RW = %b, RAM_SE = %b, ID_Jumpl_Instr = %b, ID_Instr_Alter_CC = %b, ID_B_Instr = %b, ID_Call_Instr = %b, RAM_Size = %b, ID_Load_CallOrJumpl_Instr = %b, ID_ALU_OP = %b\n-Outputs of EX stage:\nI31_OUT_REG = %b,I30_OUT_REG = %b,I24_OUT_REG = %b,I13_OUT_REG = %b, ID_Load_Instr_OUT_REG, = %b, ID_ALU_OP_OUT_REG = %b, ID_RF_Enable_OUT_REG = %b, RAM_Enable_OUT_REG = %b,RAM_RW_OUT_REG = %b,RAM_SE_OUT_REG = %b, RAM_Size_OUT_REG = %b, ID_Jumpl_Instr_OUT_REG = %b,ID_Instr_Alter_CC_OUT_REG = %b, ID_Load_CallOrJumpl_Instr_OUT_REG = %b\n-Outputs of MEM stage:\nID_RF_enable_MEM_Out = %b, RAW_Enable_Out = %b, RAM_RW_Out = %b, RAM_SE_Out = %b, RAM_Size_Out = %b, ID_load_callOrJumpl_instr_MEM_Out = %b\n-Outputs of WB Stage:\nID_RF_enable_OUT_WB = %d \n", $time,I31_0_2, PC_Out, nPC_Out,   I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable, RAM_Enable, RAM_RW, RAM_SE, ID_Jumpl_Instr, ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr, RAM_Size, ID_Load_CallOrJumpl_Instr, ID_ALU_OP,   I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG,ID_Load_Instr_OUT_REG,ID_ALU_OP_OUT_REG, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG,RAM_Size_OUT_REG,ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG,ID_Load_CallOrJumpl_Instr_OUT_REG,   ID_RF_enable_MEM_Out, RAW_Enable_Out, RAM_RW_Out, RAM_SE_Out, RAM_Size_Out, ID_load_callOrJumpl_instr_MEM_Out,ID_RF_enable_OUT_WB);
+  $monitor("0) Time Unit: %0t\n1) Instruction, PC, nPC:\n-Instr going to CU = %b, PC = %d, nPC = %d\n2) Ouputs of the Control Unit:\n-I31 = %b, I30 = %b, I24 = %b, I13 = %b, ID_Load_Instr = %b, ID_RF_Enable = %b, RAM_Enable = %b, RAM_RW = %b, RAM_SE = %b, ID_Jumpl_Instr = %b, ID_Instr_Alter_CC = %b, ID_B_Instr = %b, ID_Call_Instr = %b, RAM_Size = %b, ID_Load_CallOrJumpl_Instr = %b, ID_ALU_OP = %b\n3) Outputs of EX stage:\n-I31_OUT_REG = %b,I30_OUT_REG = %b,I24_OUT_REG = %b,I13_OUT_REG = %b, ID_Load_Instr_OUT_REG, = %b, ID_ALU_OP_OUT_REG = %b, ID_RF_Enable_OUT_REG = %b, RAM_Enable_OUT_REG = %b,RAM_RW_OUT_REG = %b,RAM_SE_OUT_REG = %b, RAM_Size_OUT_REG = %b, ID_Jumpl_Instr_OUT_REG = %b,ID_Instr_Alter_CC_OUT_REG = %b, ID_Load_CallOrJumpl_Instr_OUT_REG = %b\n4) Outputs of MEM stage:\n-ID_RF_enable_MEM_Out = %b, RAW_Enable_Out = %b, RAM_RW_Out = %b, RAM_SE_Out = %b, RAM_Size_Out = %b, ID_load_callOrJumpl_instr_MEM_Out = %b\n5) Outputs of WB Stage:\n-ID_RF_enable_OUT_WB = %b \n", $time,I31_0_2, PC_Out, nPC_Out,   I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable, RAM_Enable, RAM_RW, RAM_SE, ID_Jumpl_Instr, ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr, RAM_Size, ID_Load_CallOrJumpl_Instr, ID_ALU_OP,   I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG,ID_Load_Instr_OUT_REG,ID_ALU_OP_OUT_REG, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG,RAM_Size_OUT_REG,ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG,ID_Load_CallOrJumpl_Instr_OUT_REG,   ID_RF_enable_MEM_Out, RAW_Enable_Out, RAM_RW_Out, RAM_SE_Out, RAM_Size_Out, ID_load_callOrJumpl_instr_MEM_Out,ID_RF_enable_OUT_WB);
 end
 
 endmodule
@@ -232,7 +232,7 @@ module control_unit(output reg I31, I30, I24, I13,
                          Instr[24:19] == 6'b000000 || Instr[24:19] == 6'b000001 || Instr[24:19] == 6'b000010 ||
                          Instr[24:19] == 6'b000011 || Instr[24:19] == 6'b001101)); // Check the OP and then if it's a Load instruction
         ID_Jumpl_Instr = ((Instr[31:30] == 2'b10) && (Instr[24:19] == 6'b111000)); // Check the OP and then if it's a Jumpl instruction
-        ID_B_Instr = ((Instr[31:30] == 2'b00) && (4'b0000 <= Instr[28:25] && Instr[28:25] >= 4'b1111)); // Check the OP and then if it's a branch instruction
+        ID_B_Instr = ((Instr[31:30] == 2'b00) && (4'b0000 <= Instr[28:25] && Instr[28:25] <= 4'b1111) && (Instr[24:22] == 3'b010)); // Check the OP and then if it's a branch instruction
         ID_Call_Instr = (Instr[31:30] == 2'b01); // Check the OP to see if it's a call instruction
         
         // Signal used for multiplexer that selects the resulting operand in the register file's PW
@@ -245,7 +245,7 @@ module control_unit(output reg I31, I30, I24, I13,
         end
 
         // Convert the opcode from instr to the opcode that will be used for the ALU
-        ID_Instr_Alter_CC = 0; // Preliminary value if conditions are met then change it
+        ID_Instr_Alter_CC = 0; // Preliminary value, change for corresponding instructions
         opcode = {Instr[31:30],Instr[24:19]}; // Join op and op3
         case(opcode)
             // Basic Arithmetic Instructions
@@ -304,31 +304,23 @@ module control_unit(output reg I31, I30, I24, I13,
             8'b10100101: ID_ALU_OP = 4'b1010; // sll -> shift left logical (A) B positions for ALU
             8'b10100110: ID_ALU_OP = 4'b1011; // srl -> shift right logical (A) B positions for ALU
             8'b10100111: ID_ALU_OP = 4'b1100; // sra -> shift right arithmetic (A) B positions for ALU
-            // Load Integer Instructions
-            8'b11001001: ID_ALU_OP = 4'b0000; // lsb -> A + B for ALU
-            8'b11001010: ID_ALU_OP = 4'b0000; // ldsh -> A + B for ALU
-            8'b11000000: ID_ALU_OP = 4'b0000; // ld -> A + B for ALU
-            8'b11000001: ID_ALU_OP = 4'b0000; // ldub -> A + B for ALU
-            8'b11000010: ID_ALU_OP = 4'b0000; // lduh -> A + B for ALU
-            8'b11000011: ID_ALU_OP = 4'b0000; // ldd -> A + B for ALU
-            8'b11001101: ID_ALU_OP = 4'b0000; // ldstub -> A + B for ALU
-            8'b11001111: ID_ALU_OP = 4'b0000; // swap -> A + B for ALU
-            // Store Integer Instructions
-            8'b11000101: ID_ALU_OP = 4'b0000; // stb -> A + B for ALU
-            8'b11000110: ID_ALU_OP = 4'b0000; // sth -> A + B for ALU
-            8'b11000100: ID_ALU_OP = 4'b0000; // st -> A + B for ALU
-            8'b11000111: ID_ALU_OP = 4'b0000; // std -> A + B for ALU
-            // Jumpl Instruction
-            8'b10111000: ID_ALU_OP = 4'b0000; // jumpl -> A + B for ALU
-            default: ID_ALU_OP = 4'b0000;
+            default: ID_ALU_OP = 4'b0000;  // For other instructions like load, store, jumpl, branch, call, etc.
         endcase
-        if(Instr[31:30] == 2'b00 && Instr[24:22] == 3'b010) begin // Branch Instructions
-            ID_ALU_OP = 4'b0000; // A + B for ALU. Passing a default operation
-        end else if(Instr[31:30] == 2'b00 && Instr[24:22] == 3'b100) begin // Sethi Instructions
+        if(Instr[31:30] == 2'b00 && Instr[24:22] == 3'b100) begin // Sethi Instructions
             ID_ALU_OP = 4'b1110; // sethi -> B for ALU. Let the ALU choose what the src op2 handler provides as input in B
-        end else if(Instr[31:30] == 2'b01) begin // Call Instructions
-            ID_ALU_OP = 4'b0000; // A + B for ALU. Passing a default operation
         end
+        
+        // Check which instruction can write to the Register File
+        ID_RF_Enable = 1; // Preliminary value, change for corresponding instructions
+        if(Instr[31:30] == 2'b00 && Instr[24:22] == 3'b010) begin // Branch Instructions
+            ID_RF_Enable = 0;
+        end else if(Instr == 32'b0) begin // NOP Instruction
+            ID_RF_Enable = 0;
+        end else if(Instr[31:30] == 2'b11 && (Instr[24:19] == 6'b000101 || Instr[24:19] == 6'b000110 || 
+                    Instr[24:19] == 6'b000100 || Instr[24:19] == 6'b000111)) begin // Store Instructions
+            ID_RF_Enable = 0;
+        end
+
         // RAM Signals:
         RAM_Enable = 1; // Always one if not there is no operation for RAM
         if( opcode == 8'b11000101 ||  opcode == 8'b11000110 ||  opcode == 8'b11000100 || opcode == 8'b11000111) begin  // Check if it's a store instruction
@@ -357,7 +349,6 @@ module control_unit(output reg I31, I30, I24, I13,
             8'b11000110: RAM_Size = 2'b01; // sth -> halword
             8'b11000100: RAM_Size = 2'b10; // st -> word
         endcase
-        ID_RF_Enable = 1; // TODO: Check cases for when it is 0
     end
 endmodule
 
