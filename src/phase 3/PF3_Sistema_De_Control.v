@@ -182,7 +182,7 @@ initial begin
     $fclose(file);
 end
 
-initial #48 $finish;
+initial #54 $finish;
   
 initial begin
   Cin = 1;
@@ -201,7 +201,7 @@ end
 initial begin
   LE = 1'b1;
   select = 1'b0; 
-  #40 select = 1'b1;
+  #49 select = 1'b1; // Before the NOP instruction enters the ID stage
 end
 
 initial begin
@@ -322,11 +322,14 @@ module control_unit(output reg I31, I30, I24, I13,
         end
 
         // RAM Signals:
-        RAM_Enable = 1; // Always one if not there is no operation for RAM
+      	RAM_Enable = 0; //default to zero RAM_Enable
+      	RAM_RW = 0; //default to zero RAM_RW
         if( opcode == 8'b11000101 ||  opcode == 8'b11000110 ||  opcode == 8'b11000100 || opcode == 8'b11000111) begin  // Check if it's a store instruction
             RAM_RW = 1;
-        end else begin
-            RAM_RW = 0; // default case for load instruction
+            RAM_Enable = 1;
+        end else if (opcode == 8'b11001001 || opcode == 8'b11001010 || opcode == 8'b11000000 ||  opcode == 8'b11000001 ||  opcode == 8'b11000010 || opcode == 8'b11000011 || opcode == 8'b11001101) begin  // Check if it's a load instruction
+            RAM_RW = 0;
+          	RAM_Enable = 1;
         end
         // RAM Size and Sign Extention (SE):
         RAM_SE = 0; // Preliminary value
