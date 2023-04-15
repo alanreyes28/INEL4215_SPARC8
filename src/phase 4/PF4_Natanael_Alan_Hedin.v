@@ -796,6 +796,23 @@ endcase
 end
 endmodule
 
+// Condition Handler and Program Status Register Implementation
+/************************************************************************************************************************************************************************************************************************************************************************/
+
+// Program Status Register module
+module Program_Status_Register (output reg [3:0] PSR_Out, output reg bit_C,
+                                input Z, N, C, V, LE, Clr, Clk);
+    always @ (posedge Clk) begin // Rising edge triggered Register
+        if(Clr) begin
+            PSR_Out <= 4'b0;
+            bit_C <= 1'b0;
+        end
+        else if(LE) begin
+            PSR_Out <= {Z,N,C,V}; // Condition Flags
+            bit_C <= C;
+        end
+    end
+endmodule
 
 //Partes del RAM/ROM Implementation
 /************************************************************************************************************************************************************************************************************************************************************************/
