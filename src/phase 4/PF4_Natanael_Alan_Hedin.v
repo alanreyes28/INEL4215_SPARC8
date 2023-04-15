@@ -799,6 +799,43 @@ endmodule
 // Condition Handler and Program Status Register Implementation
 /************************************************************************************************************************************************************************************************************************************************************************/
 
+// Condition Handler module
+module Condition_Handler (output reg IF_B, input [3:0] I28_25, input [3:0] PSR_Out, input ID_B_Instr);
+  	reg Z;
+    reg N;
+    reg C;
+    reg V;
+    always @(ID_B_Instr, PSR_Out, I28_25) begin
+      	Z = PSR_Out[3];
+        N = PSR_Out[2];
+        C = PSR_Out[1];
+        V = PSR_Out[0];
+        if (ID_B_Instr) begin
+            case(I28_25)
+                4'b1000: IF_B = 1'b1; // Banch always
+                4'b0000: IF_B = 1'b0; // Branch never
+                4'b1001: IF_B = !Z;   // Branch on not equal
+                4'b0001: IF_B = Z;    // Branch on equal
+                4'b1010: IF_B = !(Z | (N ^ V)); // Branch on greater
+                4'b0010: IF_B = Z | (N ^ V);   // Branch on less or equal
+                4'b1011: IF_B = !(N ^ V); // Branch on	greater or equal
+                4'b0011: IF_B = N ^ V;    // Branch on	less
+                4'b1100: IF_B = !(C | Z); // Branch on greater unsigned
+                4'b0100: IF_B = C | Z;    // Branch on less or equal unsigned
+                4'b1101: IF_B = !C;  // Branch on	Carry = 0
+                4'b0101: IF_B = C;   // Branch on Carry = 1
+                4'b1110: IF_B = !N;  // Branch on positive
+                4'b0110: IF_B = N;   // Branch on negative
+                4'b1111: IF_B = !V;  // Branch overreflow = 0
+                4'b0111: IF_B = V;   // Branch overreflow = 1
+            endcase
+        end
+        else begin
+            IF_B = 1'b0;
+        end
+    end
+endmodule
+
 // Program Status Register module
 module Program_Status_Register (output reg [3:0] PSR_Out, output reg bit_C,
                                 input Z, N, C, V, LE, Clr, Clk);
