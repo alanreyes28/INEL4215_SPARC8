@@ -923,5 +923,83 @@ module source_operand2_handler_sparc_component(output reg [31:0] N,
         endcase
 endmodule
 
-
+//New Modules 
 /************************************************************************************************************************************************************************************************************************************************************************/
+
+module mux_2x1 (output reg Y, input S, A, B);
+always @ (S, A, B)
+if (S) Y = B;
+else Y = A;
+endmodule
+
+module mux_4x1 (output reg Y, input [1: 0] S,
+input A, B, C, D);
+always @ (S, A, B, C, D)
+case (S)
+2'b00: Y = A;
+2'b01: Y = B;
+2'b10: Y = C;
+2'b11: Y = D;
+endcase
+endmodule
+
+module or_box (
+    input wire A,
+    input wire B,
+    output wire Y); 
+
+  assign Y = A | B;
+endmodule
+
+module SE_box1 (
+  input [21:0] A, //I21_0 with 22 bits 
+  output reg [31:0] Y //Output
+);
+
+  always @(*) begin
+    if (A[21] == 1) begin
+      Y = {{10{1'b1}}, A};
+    end else begin
+      Y = {{10{1'b0}}, A};
+    end
+  end
+
+endmodule
+
+module SE_box2 (
+  input [29:0] A, //I29_0 with 30 bits 
+  output reg [31:0] Y //Output
+);
+
+  always @(*) begin
+    if (A[29] == 1) begin
+      Y = {{10{1'b1}}, A};
+    end else begin
+      Y = {{10{1'b0}}, A};
+    end
+  end
+
+endmodule
+
+module Multiply_by_4_box (
+  input [31:0] A,
+  output [31:0] Y
+);
+
+  assign Y = A << 2;
+
+endmodule
+
+module PC_nPC_handler (input ID_Jumpl_instr, input OR_signal, output reg [1:0] ID_handler);
+
+    always @(ID_Jumpl_instr, OR_signal)
+    begin
+        if(ID_Jumpl_instr == 1 && OR_signal == 0)
+            ID_handler = 00;
+        else if (OR_signal == 1 && ID_Jumpl_instr == 0) 
+            ID_handler = 10;
+        else
+        ID_handler = 01; 
+    end
+endmodule
+
