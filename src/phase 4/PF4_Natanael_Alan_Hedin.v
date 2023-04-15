@@ -1057,3 +1057,71 @@ module PC_nPC_handler (input ID_Jumpl_instr, input OR_signal, output reg [1:0] I
     end
 endmodule
 
+module Reset_handler (input ID_Jumpl_instr, input IF_B_signal, input Glob_R, input I29, output reg R);
+
+    always @(ID_Jumpl_instr, IF_B_signal,Glob_R, I29)
+    begin
+          if (Glob_R == 1 || ID_Jumpl_instr == 1 || IF_B_signal == 1 || (I29 == 1 && IF_B_signal == 0))
+        R = 1;
+        else
+        R = 0;
+    end
+endmodule
+
+module Hazards_Fowarding_Unit (
+  input EX_RF_enable, MEM_RF_enable, WB_RF_enable,
+  input [4:0] ID_RS1, ID_RS2, ID_RD,
+  input  EX_RD, MEM_RD, WB_RD,
+  output reg [1:0] S1_MUX, S2_MUX, S3_MUX,
+  output reg ID_npc_enable, ID_PC_enable, IF_ID_enable
+);
+
+  // Default values
+  always @(*) begin
+    S1_MUX = 2'b00;
+    S2_MUX = 2'b00;
+    S3_MUX = 2'b00;
+    ID_npc_enable = 1'b0;
+    ID_PC_enable = 1'b0;
+    IF_ID_enable = 1'b0;
+
+    if (EX_RF_enable && (ID_RS1 == ID_RD)) begin
+      S1_MUX = 2'b10;
+      S2_MUX = 2'b10;
+    end
+    else if (EX_RF_enable && (ID_RS2 == ID_RD)) begin
+      S1_MUX = 2'b01;
+      S2_MUX = 2'b10;
+    end
+    else if (MEM_RF_enable && (ID_RS1 == ID_RD)) begin
+      S1_MUX = 2'b10;
+      S2_MUX = 2'b01;
+      S3_MUX = 2'b10;
+      ID_npc_enable = 1'b1;
+      ID_PC_enable = 1'b1;
+      IF_ID_enable = 1'b1;
+    end
+    else if (MEM_RF_enable && (ID_RS2 == ID_RD)) begin
+      S1_MUX = 2'b01;
+      S2_MUX = 2'b01;
+      S3_MUX = 2'b10;
+      ID_npc_enable = 1'b1;
+      ID_PC_enable = 1'b1;
+      IF_ID_enable = 1'b1;
+    end
+    else if (WB_RF_enable && (ID_RS1 == ID_RD)) begin
+      S1_MUX = 2'b10;
+      S3_MUX = 2'b01;
+      ID_npc_enable = 1'b1;
+      ID_PC_enable = 1'b1;
+      IF_ID_enable = 1'b1;
+    end
+    else if (WB_RF_enable && (ID_RS2 == ID_RD)) begin
+      S1_MUX = 2'b01;
+      S3_MUX = 2'b01;
+      ID_npc_enable = 1'b1;
+      ID_PC_enable = 1'b1;
+      IF_ID_enable = 1'b1;
+    end
+  end
+endmodule
