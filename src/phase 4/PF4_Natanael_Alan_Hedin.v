@@ -619,6 +619,63 @@ endmodule
 
 //Partes del Register File Implementation
 /************************************************************************************************************************************************************************************************************************************************************************/
+module Three_Port_Register_File (
+    input  [4:0] RA,RB,RC,RW,  // Entradas del registro para seleccionar registros A, B, C y el registro de escritura
+    input  [31:0] PW,          // Entrada de datos del registro de escritura
+    output  [31:0] PA, PB, PC, // Salidas de los registros A, B y C
+    input Clk, LE            // Entradas de reloj y carga del registro
+);
+
+wire [31:0] O;
+wire [31:0] R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15,R16,R17,R18,R19,R20,R21,R22,R23,R24,R25,R26,R27,R28,R29,R30,R31;
+
+// Instanciación de los módulos
+
+// Instanciación del decodificador binario para decodificar las entradas RA, RB, RC y activar la selección de registro correspondiente
+Binary_Decoder BD (RW,LE,O);
+
+// Instanciación del array de registros de 32 bits cada uno para almacenar los datos en el registro de escritura y en los registros A, B y C
+Register Regs0 (PW,R0,O[0],Clk);
+Register Regs1 (PW,R1,O[1],Clk);
+Register Regs2 (PW,R2,O[2],Clk);
+Register Regs3 (PW,R3,O[3],Clk);
+Register Regs4 (PW,R4,O[4],Clk);
+Register Regs5 (PW,R5,O[5],Clk);
+Register Regs6 (PW,R6,O[6],Clk);
+Register Regs7 (PW,R7,O[7],Clk);
+Register Regs8 (PW,R8,O[8],Clk);
+Register Regs9 (PW,R9,O[9],Clk);
+Register Regs10 (PW,R10,O[10],Clk);
+Register Regs11 (PW,R11,O[11],Clk);
+Register Regs12 (PW,R12,O[12],Clk);
+Register Regs13 (PW,R13,O[13],Clk);
+Register Regs14 (PW,R14,O[14],Clk);
+Register Regs15 (PW,R15,O[15],Clk);
+Register Regs16 (PW,R16,O[16],Clk);
+Register Regs17 (PW,R17,O[17],Clk);
+Register Regs18 (PW,R18,O[18],Clk);
+Register Regs19 (PW,R19,O[19],Clk);
+Register Regs20 (PW,R20,O[20],Clk);
+Register Regs21 (PW,R21,O[21],Clk);
+Register Regs22 (PW,R22,O[22],Clk);
+Register Regs23 (PW,R23,O[23],Clk);
+Register Regs24 (PW,R24,O[24],Clk);
+Register Regs25 (PW,R25,O[25],Clk);
+Register Regs26 (PW,R26,O[26],Clk);
+Register Regs27 (PW,R27,O[27],Clk);
+Register Regs28 (PW,R28,O[28],Clk);
+Register Regs29 (PW,R29,O[29],Clk);
+Register Regs30 (PW,R30,O[30],Clk);
+Register Regs31 (PW,R31,O[31],Clk);
+
+// Instanciación de los multiplexores de 32x1 para seleccionar el valor almacenado en el registro correspondiente y enviarlo a las salidas de los registros A, B y C
+Multiplexer_32x1 MuxA (RA,0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15,R16,R17,R18,R19,R20,R21,R22,R23,R24,R25,R26,R27,R28,R29,R30,R31,PA);
+
+Multiplexer_32x1 MuxB (RB,0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15,R16,R17,R18,R19,R20,R21,R22,R23,R24,R25,R26,R27,R28,R29,R30,R31,PB);
+
+  Multiplexer_32x1 MuxC (RC,0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15,R16,R17,R18,R19,R20,R21,R22,R23,R24,R25,R26,R27,R28,R29,R30,R31,PC);
+
+endmodule
 
 module Binary_Decoder ( //El módulo tiene tres puertos: D, E y O. D es una entrada de 5 bits, E es una entrada de 1 bit y O es una salida de 32 bits.
     input [4:0] D,
