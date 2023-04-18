@@ -1080,7 +1080,7 @@ module Hazards_Fowarding_Unit (
     MX_HFU = 1'b0; // Pass control unit values
 
     // Data hazard by Load Instruction
-    if(EX_load_instr && ((ID_RS1 == EX_RD) || (ID_RS2 == EX_RD) || (ID_RS2 == EX_RD))) begin
+    if(EX_load_instr && ((ID_RS1 == EX_RD) || (ID_RS2 == EX_RD) || (ID_RD == EX_RD))) begin
         IF_ID_enable = 1'b0; // Disable pipeline
         ID_PC_enable = 1'b0; // Disable PC
         ID_npc_enable = 1'b0; // Disable nPC
