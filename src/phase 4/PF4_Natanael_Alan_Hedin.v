@@ -1001,7 +1001,6 @@ module or_box (
     input wire A,
     input wire B,
     output wire Y); 
-
   assign Y = A | B;
 endmodule
 
@@ -1039,13 +1038,11 @@ module Multiply_by_4_box (
   input [31:0] A,
   output [31:0] Y
 );
-
   assign Y = A << 2;
 
 endmodule
 
 module PC_nPC_handler (input ID_Jumpl_instr, input OR_signal, output reg [1:0] ID_handler);
-
     always @(ID_Jumpl_instr, OR_signal)
     begin
         if(ID_Jumpl_instr == 1 && OR_signal == 0)
@@ -1058,7 +1055,6 @@ module PC_nPC_handler (input ID_Jumpl_instr, input OR_signal, output reg [1:0] I
 endmodule
 
 module Reset_handler (input ID_Jumpl_instr, input IF_B_signal, input Glob_R, input I29, output reg R);
-
     always @(ID_Jumpl_instr, IF_B_signal,Glob_R, I29)
     begin
           if (Glob_R == 1 || ID_Jumpl_instr == 1 || IF_B_signal == 1 || (I29 == 1 && IF_B_signal == 0))
@@ -1071,57 +1067,64 @@ endmodule
 module Hazards_Fowarding_Unit (
   input EX_RF_enable, MEM_RF_enable, WB_RF_enable,
   input [4:0] ID_RS1, ID_RS2, ID_RD,
-  input  EX_RD, MEM_RD, WB_RD,
+  input  EX_RD, MEM_RD, WB_RD, EX_load_instr,
   output reg [1:0] S1_MUX, S2_MUX, S3_MUX,
-  output reg ID_npc_enable, ID_PC_enable, IF_ID_enable
+  output reg ID_npc_enable, ID_PC_enable, IF_ID_enable, MX_HFU
 );
 
   // Default values
   always @(*) begin
-    S1_MUX = 2'b00;
-    S2_MUX = 2'b00;
-    S3_MUX = 2'b00;
-    ID_npc_enable = 1'b0;
-    ID_PC_enable = 1'b0;
-    IF_ID_enable = 1'b0;
+    IF_ID_enable = 1'b1; // Enable pipeline
+    ID_PC_enable = 1'b1; // Enable PC
+    ID_npc_enable = 1'b1; // Enable nPC
+    MX_HFU = 1'b0; // Pass control unit values
 
-    if (EX_RF_enable && (ID_RS1 == ID_RD)) begin
-      S1_MUX = 2'b10;
-      S2_MUX = 2'b10;
+    // Data hazard by Load Instruction
+    if(EX_load_instr && ((ID_RS1 == EX_RD) || (ID_RS2 == EX_RD) || (ID_RS2 == EX_RD))) begin
+        IF_ID_enable = 1'b0; // Disable pipeline
+        ID_PC_enable = 1'b0; // Disable PC
+        ID_npc_enable = 1'b0; // Disable nPC
+        MX_HFU = 1'b1; // NOP to EX stage
     end
-    else if (EX_RF_enable && (ID_RS2 == ID_RD)) begin
-      S1_MUX = 2'b01;
-      S2_MUX = 2'b10;
+
+    // First Operand Register Forwarding
+    if (EX_RF_enable && (ID_RS1 == EX_RD)) begin
+        S1_MUX = 2'b10;
     end
-    else if (MEM_RF_enable && (ID_RS1 == ID_RD)) begin
-      S1_MUX = 2'b10;
-      S2_MUX = 2'b01;
-      S3_MUX = 2'b10;
-      ID_npc_enable = 1'b1;
-      ID_PC_enable = 1'b1;
-      IF_ID_enable = 1'b1;
+    else if (MEM_RF_enable && (ID_RS1 == MEM_RD)) begin
+        S1_MUX = 2'b11;
     end
-    else if (MEM_RF_enable && (ID_RS2 == ID_RD)) begin
-      S1_MUX = 2'b01;
-      S2_MUX = 2'b01;
-      S3_MUX = 2'b10;
-      ID_npc_enable = 1'b1;
-      ID_PC_enable = 1'b1;
-      IF_ID_enable = 1'b1;
+    else if (WB_RF_enable && (ID_RS1 == WB_RD)) begin
+        S1_MUX = 2'b01;
     end
-    else if (WB_RF_enable && (ID_RS1 == ID_RD)) begin
-      S1_MUX = 2'b10;
-      S3_MUX = 2'b01;
-      ID_npc_enable = 1'b1;
-      ID_PC_enable = 1'b1;
-      IF_ID_enable = 1'b1;
+    else begin
+        S1_MUX = 2'b00;
     end
-    else if (WB_RF_enable && (ID_RS2 == ID_RD)) begin
-      S1_MUX = 2'b01;
-      S3_MUX = 2'b01;
-      ID_npc_enable = 1'b1;
-      ID_PC_enable = 1'b1;
-      IF_ID_enable = 1'b1;
+    // Second Operand Register Forwarding
+    if (EX_RF_enable && (ID_RS2 == EX_RD)) begin
+        S2_MUX = 2'b10;
+    end
+    else if (MEM_RF_enable && (ID_RS2 == MEM_RD)) begin
+        S2_MUX = 2'b11;
+    end
+    else if (WB_RF_enable && (ID_RS2 == WB_RD)) begin
+        S2_MUX = 2'b01;
+    end
+    else begin
+        S2_MUX = 2'b00;
+    end
+    // Third Operand Register Forwarding
+    if (EX_RF_enable && (ID_RD == EX_RD)) begin
+        S3_MUX = 2'b10;
+    end
+    else if (MEM_RF_enable && (ID_RD == MEM_RD)) begin
+        S3_MUX = 2'b11;
+    end
+    else if (WB_RF_enable && (ID_RD == WB_RD)) begin
+        S3_MUX = 2'b01;
+    end
+    else begin
+        S3_MUX = 2'b00;
     end
   end
 endmodule
