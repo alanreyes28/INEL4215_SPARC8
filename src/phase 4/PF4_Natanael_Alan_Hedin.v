@@ -24,7 +24,7 @@ wire [31:0] PC31_0, I31_0_2;
 wire I29;
 wire [4:0] I18_14, I4_0, I29_25,I29_25_2;
 wire [3:0] I28_25; 
-  wire [21:0] I21_0,I21_0_2;
+wire [21:0] I21_0,I21_0_2;
 
 
 // Parameters for ID/EX
