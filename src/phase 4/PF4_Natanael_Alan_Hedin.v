@@ -4,8 +4,8 @@ module Sistema_De_Control_tb;
 // Parameters for Registers
 reg select,Clr,Clk,LE;
 
-wire [31:0] nPC_Out,Adder_Out , DataOut;
-reg Z_TA, N_TA, C_TA, V_TA, Z_IF, N_IF, C_IF, V_IF, Cin;
+wire [31:0] nPC_Out,Adder_Out , DataOut, ALU_Out;
+reg Z_TA, N_TA, C_TA, V_TA, Z_IF, N_IF, C_IF, V_IF, Cin ,Z, N, C, V, Cin_PSR;
 
 // Parameters for CU
 wire  I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable,RAM_Enable, RAM_RW, RAM_SE,	ID_Jumpl_Instr, ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr; 
@@ -19,24 +19,23 @@ wire [1:0] ID_Load_CallOrJumpl_Instr_OUT;
 
 
 // Parameters for IF/ID
-wire [21:0] I21_0;
 wire [29:0] I29_0;
 wire [31:0] PC31_0, I31_0_2;
 wire I29;
 wire [4:0] I18_14, I4_0, I29_25,I29_25_2;
 wire [3:0] I28_25; 
-wire [12:0] I12_0;
+  wire [21:0] I21_0,I21_0_2;
 
 
 // Parameters for ID/EX
 wire [31:0] MX1_OUT, MX2_OUT, MX3_OUT, PC_OUT;
-wire [12:0] I12_0_OUT;
+wire [21:0] I21_0_OUT;
 wire [4:0] RD4_0_OUT_EX; 
 wire [3:0] ID_ALU_OP_OUT_REG;
 wire I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG, ID_Load_Instr_OUT_REG, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG, ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG;
 wire [1:0] RAM_Size_OUT_REG, ID_Load_CallOrJumpl_Instr_OUT_REG;
 reg [31:0] MX1_IN,MX2_IN,MX3_IN,PC_IN;
-reg [12:0] I12_0_IN;
+reg [21:0] I21_0_IN;
 reg I31_OUT_MUX,I30_OUT_MUX,I24_OUT_MUX,I13_OUT_MUX, ID_Load_Instr_OUT_MUX, ID_RF_Enable_OUT_MUX, RAM_Enable_OUT_MUX,RAM_RW_OUT_MUX,RAM_SE_OUT_MUX, ID_Jumpl_Instr_OUT_MUX,ID_Instr_Alter_CC_OUT_MUX;
 reg [3:0] ID_ALU_OP_OUT_MUX;
 reg [1:0] RAM_Size_OUT_MUX, ID_Load_CallOrJumpl_Instr_OUT_MUX;
@@ -82,6 +81,9 @@ wire [4:0] MUX2x1_ID_RD_OUT;
 wire [1:0] HZ_S1_MUX, HZ_S2_MUX, HZ_S3_MUX,
 wire ID_nPC_enable, ID_PC_enable, IF_ID_enable, MX_HFU
 
+// Parameters for Source Operand2 Handler 
+wire [31:0] SO2_Handler_Out;
+
 Special_Register nPC (
     nPC_Out, // Output
     Adder_Out,LE,Clr,Clk // Inputs
@@ -120,7 +122,7 @@ ctrl_unit_mux_2x1 CU_MUX(
 
 Pipeline_Register_IF_ID IF_ID (
     I21_0, I29_0, PC31_0, I29, I18_14, I4_0,
-    I29_25, I28_25, I12_0, I31_0_2, I29_25_2, // Outputs
+    I29_25, I28_25, I21_0_2, I31_0_2, I29_25_2, // Outputs
     DataOut, PC_Out, Clr, Clk // Inputs
 );
 
@@ -159,7 +161,7 @@ Three_Port_Register_File dut (
 MUX2x1_4bits MUX2x1_ID_RD (
     MUX2x1_ID_RD_OUT, // Outputs
     I29_25, 
-    4'b1111, // 15 immediate for B parameter
+    5'b01111, // 15 immediate for B parameter
     ID_Call_Instr // Inputs
 );
 
@@ -167,7 +169,7 @@ Pipeline_Register_ID_EX ID_EX (
     //Outputs Parte Amarilla
 /**********************************/
     MX1_OUT, MX2_OUT,MX3_OUT,PC_OUT,
-    I12_0_OUT,
+    I21_0_OUT,
     RD4_0_OUT_EX,
 /**********************************/
 
@@ -185,7 +187,7 @@ Pipeline_Register_ID_EX ID_EX (
     //Inputs Parte Amarilla
 /**********************************/
     MX1_IN,MX2_IN,MX3_IN,PC_IN,
-    I12_0, //pendiente a ver si el nombre de esto causa problemas (no creo)
+    I21_0_2, //pendiente a ver si el nombre de esto causa problemas (no creo)
     MUX2x1_ID_RD_OUT,
 /**********************************/
 
@@ -200,14 +202,6 @@ Pipeline_Register_ID_EX ID_EX (
     ID_Load_CallOrJumpl_Instr_OUT,
 /**********************************/
     Clr, Clk
-);
-
-Hazards_Fowarding_Unit Hazard_Fwd_Unit(
-  ID_RF_Enable_OUT_REG, ID_RF_enable_MEM_Out, ID_RF_enable_OUT_WB, ID_Load_Instr_OUT
-  I18_14, I4_0, I29_25,
-  RD4_0_OUT_EX, RD_MEM_Out, RD_WB_OUT,
-  HZ_S1_MUX, HZ_S2_MUX, HZ_S3_MUX,
-  ID_nPC_enable, ID_PC_enable, IF_ID_enable, MX_HFU
 );
 
 Pipeline_Register_EX_MEM EX_MEM (
@@ -477,7 +471,7 @@ module Pipeline_Register_IF_ID (output reg [21:0] I21_0,
                                 output reg [4:0] I4_0,
                                 output reg [4:0] I29_25,
                                 output reg [3:0] I28_25,
-                                output reg [12:0] I12_0,
+                                output reg [21:0] I21_0_2,
                                 output reg [31:0] I31_0, 
                                 output reg [4:0] I29_25_2, //pal mux
                                 input [31:0] InstuctionMemoryOut, PC , 
@@ -492,7 +486,7 @@ module Pipeline_Register_IF_ID (output reg [21:0] I21_0,
             I4_0 <= 5'b0; 
             I29_25 <= 5'b0; 
             I28_25 <= 4'b0; 
-            I12_0 <= 12'b0; 
+            I21_0 <= 21'b0; 
             I31_0 <= 32'b0; 
             I29_25_2 <= 5'b0; 
         end
@@ -505,7 +499,7 @@ module Pipeline_Register_IF_ID (output reg [21:0] I21_0,
             I4_0 <= InstuctionMemoryOut[4:0]; 
             I29_25 <= InstuctionMemoryOut[29:25]; 
             I28_25 <= InstuctionMemoryOut[28:25]; 
-            I12_0 <= InstuctionMemoryOut[12:0]; 
+            I21_0 <= InstuctionMemoryOut[21:0]; 
             I31_0 <= InstuctionMemoryOut; 
             I29_25_2 <= InstuctionMemoryOut[29:25]; 
         end
@@ -517,7 +511,7 @@ module Pipeline_Register_ID_EX (
                 //Outputs Parte Amarilla
             /**********************************/
   			output reg [31:0] MX1_OUT, MX2_OUT,MX3_OUT,PC_OUT,
-            output reg [12:0] I12_0_OUT,
+            output reg [21:0] I21_0_OUT,
             output reg [4:0] RD4_0_OUT,
             /**********************************/
 
@@ -535,7 +529,7 @@ module Pipeline_Register_ID_EX (
                 //Inputs Parte Amarilla
             /**********************************/
             input [31:0] MX1_IN,MX2_IN,MX3_IN,PC_IN,
-            input [12:0] I12_0_IN, //pendiente a ver si el nombre de esto causa problemas (no creo)
+            input [21:0] I21_0_IN, //pendiente a ver si el nombre de esto causa problemas (no creo)
             input [4:0] RD4_0_IN,
             /**********************************/
 
@@ -556,7 +550,7 @@ module Pipeline_Register_ID_EX (
             MX2_OUT<= 32'b0;
             MX3_OUT<= 32'b0;
             PC_OUT <= 32'b0;
-            I12_0_OUT <= 13'b0;
+            I21_0_OUT <= 13'b0;
             RD4_0_OUT <= 5'b0;
             I31_OUT_REG <= 1'b0;
             I30_OUT_REG <= 1'b0;
@@ -578,7 +572,7 @@ module Pipeline_Register_ID_EX (
             MX2_OUT<= MX2_IN;
             MX3_OUT<= MX3_IN;
             PC_OUT <= PC_IN;
-            I12_0_OUT <= I12_0_IN;
+            I21_0_OUT <= I21_0_IN;
             RD4_0_OUT <= RD4_0_IN;
             I31_OUT_REG <= I31_OUT_MUX;
             I30_OUT_REG <= I30_OUT_MUX;
