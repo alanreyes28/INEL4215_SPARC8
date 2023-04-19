@@ -5,7 +5,7 @@ module Sistema_De_Control_tb;
 reg select,Clr,Clk,LE;
 
 wire [31:0] nPC_Out,Adder_Out , DataOut;
-reg Z, N, C, V, Cin;
+reg Z_TA, N_TA, C_TA, V_TA, Z_IF, N_IF, C_IF, V_IF, Cin;
 
 // Parameters for CU
 wire  I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable,RAM_Enable, RAM_RW, RAM_SE,	ID_Jumpl_Instr, ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr; 
@@ -71,6 +71,8 @@ wire [31:0] PC_Out;
 reg [31:0] DataIn;
 integer file, code;
 
+// Parameters for Target Address
+wire [31:0] SE1_Out,SE2_Out, MUX2x1_ID_Target_Address_Out,Times4_Out,Adder_TA_Out;
 
 Special_Register nPC (
     nPC_Out, // Output
@@ -83,7 +85,7 @@ General_Register PC (
 );
 
 alu_sparc_component Adder (
-    Adder_Out, Z, N, C, V, // Outputs
+    Adder_Out, Z_IF, N_IF, C_IF, V_IF, // Outputs
     nPC_Out, 32'b00000000000000000000000000000100, 4'b0000,  Cin // Inputs
  );
 
@@ -113,6 +115,31 @@ Pipeline_Register_IF_ID IF_ID (
     I29_25, I28_25, I12_0, I31_0_2, I29_25_2, // Outputs
     DataOut, PC_Out, Clr, Clk // Inputs
 );
+
+SE_box1 SE1(
+ I21_0, //I21_0 with 22 bits 
+ SE1_Out //Output
+);
+
+SE_box2 SE2 (
+ I29_0, //I29_0 with 30 bits 
+ SE2_Out //Output
+);
+
+mux_2x1_TA MUX2x1_ID_Target_Address ( 
+MUX2x1_ID_Target_Address_Out, //Output
+ID_B_Instr, SE2_Out, SE1_Out //Inputs
+ );
+
+ Multiply_by_4_box Times4 (
+MUX2x1_ID_Target_Address_Out,
+Times4_Out
+);
+
+alu_sparc_component Adder_TA (
+    Adder_TA_Out, Z_TA, N_TA, C_TA, V_TA, // Outputs
+    Times4_Out, PC_Out, 4'b0000,  Cin // Inputs
+ );
 
 Pipeline_Register_ID_EX ID_EX (
     //Outputs Parte Amarilla
@@ -206,7 +233,7 @@ end
 
 initial begin
   $display("PF3 Control System Results:");
-  $monitor("0) Time: %0t\n1) Instruction, PC, nPC:\n-Instr going to CU = %b, PC = %d, nPC = %d\n2) Ouputs of the Control Unit:\n-I31 = %b, I30 = %b, I24 = %b, I13 = %b, ID_Load_Instr = %b, ID_RF_Enable = %b, RAM_Enable = %b, RAM_RW = %b, RAM_SE = %b, ID_Jumpl_Instr = %b, ID_Instr_Alter_CC = %b, ID_B_Instr = %b, ID_Call_Instr = %b, RAM_Size = %b, ID_Load_CallOrJumpl_Instr = %b, ID_ALU_OP = %b\n3) Outputs of EX stage:\n-I31_OUT_REG = %b,I30_OUT_REG = %b,I24_OUT_REG = %b,I13_OUT_REG = %b, ID_Load_Instr_OUT_REG, = %b, ID_ALU_OP_OUT_REG = %b, ID_RF_Enable_OUT_REG = %b, RAM_Enable_OUT_REG = %b,RAM_RW_OUT_REG = %b,RAM_SE_OUT_REG = %b, RAM_Size_OUT_REG = %b, ID_Jumpl_Instr_OUT_REG = %b,ID_Instr_Alter_CC_OUT_REG = %b, ID_Load_CallOrJumpl_Instr_OUT_REG = %b\n4) Outputs of MEM stage:\n-ID_RF_enable_MEM_Out = %b, RAW_Enable_Out = %b, RAM_RW_Out = %b, RAM_SE_Out = %b, RAM_Size_Out = %b, ID_load_callOrJumpl_instr_MEM_Out = %b\n5) Outputs of WB Stage:\n-ID_RF_enable_OUT_WB = %b \n", $time,I31_0_2, PC_Out, nPC_Out,   I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable, RAM_Enable, RAM_RW, RAM_SE, ID_Jumpl_Instr, ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr, RAM_Size, ID_Load_CallOrJumpl_Instr, ID_ALU_OP,   I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG,ID_Load_Instr_OUT_REG,ID_ALU_OP_OUT_REG, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG,RAM_Size_OUT_REG,ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG,ID_Load_CallOrJumpl_Instr_OUT_REG,   ID_RF_enable_MEM_Out, RAW_Enable_Out, RAM_RW_Out, RAM_SE_Out, RAM_Size_Out, ID_load_callOrJumpl_instr_MEM_Out,ID_RF_enable_OUT_WB);
+  $monitor("0) Time: %0t\n1) Instruction, PC, nPC:\n-Instr going to CU = %b, PC = %d, nPC = %d\n2) Ouputs of the Control Unit:\n-I31 = %b, I30 = %b, I24 = %b, I13 = %b, ID_Load_Instr = %b, ID_RF_Enable = %b, RAM_Enable = %b, RAM_RW = %b, RAM_SE = %b, ID_Jumpl_Instr = %b, ID_Instr_Alter_CC = %b, ID_B_Instr = %b, ID_Call_Instr = %b, RAM_Size = %b, ID_Load_CallOrJumpl_Instr = %b, ID_ALU_OP = %b\n3) Outputs of EX stage:\n-I31_OUT_REG = %b,I30_OUT_REG = %b,I24_OUT_REG = %b,I13_OUT_REG = %b, ID_Load_Instr_OUT_REG, = %b, ID_ALU_OP_OUT_REG = %b, ID_RF_Enable_OUT_REG = %b, RAM_Enable_OUT_REG = %b,RAM_RW_OUT_REG = %b,RAM_SE_OUT_REG = %b, RAM_Size_OUT_REG = %b, ID_Jumpl_Instr_OUT_REG = %b,ID_Instr_Alter_CC_OUT_REG = %b, ID_Load_CallOrJumpl_Instr_OUT_REG = %b\n4) Outputs of MEM stage:\n-ID_RF_enable_MEM_Out = %b, RAW_Enable_Out = %b, RAM_RW_Out = %b, RAM_SE_Out = %b, RAM_Size_Out = %b, ID_load_callOrJumpl_instr_MEM_Out = %b\n5) Outputs of WB Stage:\n-ID_RF_enable_OUT_WB = %b \n6) Monitoring the ID Stage SE1_Out = %b ,SE2_Out = %b, MUX2x1_ID_Target_Address_Out = %b,Times4_Out = %b , Adder_TA_Out = %b , PC_Out of ID = %b", $time,I31_0_2, PC_Out, nPC_Out,   I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable, RAM_Enable, RAM_RW, RAM_SE, ID_Jumpl_Instr, ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr, RAM_Size, ID_Load_CallOrJumpl_Instr, ID_ALU_OP,   I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG,ID_Load_Instr_OUT_REG,ID_ALU_OP_OUT_REG, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG,RAM_Size_OUT_REG,ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG,ID_Load_CallOrJumpl_Instr_OUT_REG,   ID_RF_enable_MEM_Out, RAW_Enable_Out, RAM_RW_Out, RAM_SE_Out, RAM_Size_Out, ID_load_callOrJumpl_instr_MEM_Out,ID_RF_enable_OUT_WB,SE1_Out,SE2_Out, MUX2x1_ID_Target_Address_Out,Times4_Out, Adder_TA_Out, PC_Out);
 end
 
 endmodule
@@ -980,7 +1007,7 @@ endmodule
 //New Modules 
 /************************************************************************************************************************************************************************************************************************************************************************/
 
-module mux_2x1 (output reg Y, input S, A, B);
+module mux_2x1_TA (output reg [31:0] Y, input S, input [31:0] A, B);
 always @ (S, A, B)
 if (S) Y = B;
 else Y = A;
