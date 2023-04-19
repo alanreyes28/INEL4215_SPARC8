@@ -78,6 +78,10 @@ wire [31:0] PA, PB, PC_RF;
 // Parameters for Multiplexer 2x1 for destination register in ID stage
 wire [4:0] MUX2x1_ID_RD_OUT;
 
+// Parameters for Hazard Forwarding Unit
+wire [1:0] HZ_S1_MUX, HZ_S2_MUX, HZ_S3_MUX,
+wire ID_nPC_enable, ID_PC_enable, IF_ID_enable, MX_HFU
+
 Special_Register nPC (
     nPC_Out, // Output
     Adder_Out,LE,Clr,Clk // Inputs
@@ -196,6 +200,14 @@ Pipeline_Register_ID_EX ID_EX (
     ID_Load_CallOrJumpl_Instr_OUT,
 /**********************************/
     Clr, Clk
+);
+
+Hazards_Fowarding_Unit Hazard_Fwd_Unit(
+  ID_RF_Enable_OUT_REG, ID_RF_enable_MEM_Out, ID_RF_enable_OUT_WB, ID_Load_Instr_OUT
+  I18_14, I4_0, I29_25,
+  RD4_0_OUT_EX, RD_MEM_Out, RD_WB_OUT,
+  HZ_S1_MUX, HZ_S2_MUX, HZ_S3_MUX,
+  ID_nPC_enable, ID_PC_enable, IF_ID_enable, MX_HFU
 );
 
 Pipeline_Register_EX_MEM EX_MEM (
@@ -1031,7 +1043,7 @@ if (S) Y = B;
 else Y = A;
 endmodule
 
-module MUX2x1_4bits (output reg [4:0] Y, input [4:0] A, B, input S);
+module MUX2x1_5bits (output reg [4:0] Y, input [4:0] A, B, input S);
     always @ (S, A, B) begin
         if (S) Y = B;
         else Y = A;
@@ -1117,9 +1129,9 @@ module Reset_handler (input ID_Jumpl_instr, input IF_B_signal, input Glob_R, inp
 endmodule
 
 module Hazards_Fowarding_Unit (
-  input EX_RF_enable, MEM_RF_enable, WB_RF_enable,
+  input EX_RF_enable, MEM_RF_enable, WB_RF_enable, EX_load_instr
   input [4:0] ID_RS1, ID_RS2, ID_RD,
-  input  EX_RD, MEM_RD, WB_RD, EX_load_instr,
+  input [4:0] EX_RD, MEM_RD, WB_RD,
   output reg [1:0] S1_MUX, S2_MUX, S3_MUX,
   output reg ID_npc_enable, ID_PC_enable, IF_ID_enable, MX_HFU
 );
