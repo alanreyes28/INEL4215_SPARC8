@@ -24,7 +24,7 @@ wire [31:0] PC31_0, I31_0_2;
 wire I29;
 wire [4:0] I18_14, I4_0, I29_25,I29_25_2;
 wire [3:0] I28_25; 
-wire [21:0] I21_0,I21_0_2;
+  wire [21:0] I21_0,I21_0_2;
 
 
 // Parameters for ID/EX
@@ -210,6 +210,17 @@ Hazards_Fowarding_Unit Hazard_Fwd_Unit(
   RD4_0_OUT_EX, RD_MEM_Out, RD_WB_OUT,
   HZ_S1_MUX, HZ_S2_MUX, HZ_S3_MUX,
   ID_nPC_enable, ID_PC_enable, IF_ID_enable, MX_HFU
+);
+
+source_operand2_handler_sparc_component SO2_Handler( SO2_Handler_Out, //Output
+MX2_OUT, 
+I21_0_OUT,//Imm 
+{I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG} //Inputs
+);
+
+alu_sparc_component ALU( 
+ALU_Out,  Z, N, C, V, //Outputs
+MX1_OUT, SO2_Handler_Out, ID_ALU_OP_OUT_REG, Cin_PSR
 );
 
 Pipeline_Register_EX_MEM EX_MEM (
