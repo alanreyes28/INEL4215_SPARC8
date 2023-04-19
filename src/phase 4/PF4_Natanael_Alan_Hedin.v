@@ -71,10 +71,9 @@ integer file, code;
 
 // Parameters for Target Address
 wire [31:0] SE1_Out,SE2_Out, MUX2x1_ID_Target_Address_Out,Times4_Out,Adder_TA_Out;
+
 // Parameters Three_Port_Register_File
-reg [4:0] RA,RB,RC,RW;
-reg [31:0] PW;
-  wire [31:0] PA, PB, PC_RF;
+wire [31:0] PA, PB, PC_RF;
 
 // Parameters for Multiplexer 2x1 for destination register in ID stage
 wire [4:0] MUX2x1_ID_RD_OUT;
@@ -122,33 +121,33 @@ Pipeline_Register_IF_ID IF_ID (
 );
 
 SE_box1 SE1(
- I21_0, //I21_0 with 22 bits 
- SE1_Out //Output
+    I21_0, //I21_0 with 22 bits 
+    SE1_Out //Output
 );
 
 SE_box2 SE2 (
- I29_0, //I29_0 with 30 bits 
- SE2_Out //Output
+    I29_0, //I29_0 with 30 bits 
+    SE2_Out //Output
 );
 
 mux_2x1_TA MUX2x1_ID_Target_Address ( 
-MUX2x1_ID_Target_Address_Out, //Output
-ID_B_Instr, SE2_Out, SE1_Out //Inputs
+    MUX2x1_ID_Target_Address_Out, //Output
+    ID_B_Instr, SE2_Out, SE1_Out //Inputs
  );
 
-  Multiply_by_4_box Times4 (
-MUX2x1_ID_Target_Address_Out,
-Times4_Out
+Multiply_by_4_box Times4 (
+    MUX2x1_ID_Target_Address_Out,
+    Times4_Out
 );
 
 alu_sparc_component Adder_TA (
     Adder_TA_Out, Z_TA, N_TA, C_TA, V_TA, // Outputs
     Times4_Out, PC_Out, 4'b0000,  Cin // Inputs
- );
+);
 
 Three_Port_Register_File dut (
-    I18_14,I4_0, I29_25,RD_WB_OUT,
-    RD_WB_OUT, //Inputs
+    I18_14, I4_0, I29_25, RD_WB_OUT,
+    PW_WB, //Inputs
     PA, PB, PC_RF,//Outputs
     Clk, LE //Inputs
 );
