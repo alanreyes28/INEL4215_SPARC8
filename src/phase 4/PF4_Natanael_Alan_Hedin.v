@@ -24,7 +24,7 @@ wire [31:0] PC31_0, I31_0_2;
 wire I29;
 wire [4:0] I18_14, I4_0, I29_25,I29_25_2;
 wire [3:0] I28_25; 
-  wire [21:0] I21_0,I21_0_2;
+wire [21:0] I21_0,I21_0_2;
 
 
 // Parameters for ID/EX
@@ -78,8 +78,8 @@ wire [31:0] PA, PB, PC_RF;
 wire [4:0] MUX2x1_ID_RD_OUT;
 
 // Parameters for Hazard Forwarding Unit
-wire [1:0] HZ_S1_MUX, HZ_S2_MUX, HZ_S3_MUX,
-wire ID_nPC_enable, ID_PC_enable, IF_ID_enable, MX_HFU
+wire [1:0] HZ_S1_MUX, HZ_S2_MUX, HZ_S3_MUX;
+wire ID_nPC_enable, ID_PC_enable, IF_ID_enable, MX_HFU;
 
 // Parameters for Source Operand2 Handler 
 wire [31:0] SO2_Handler_Out;
@@ -158,7 +158,7 @@ Three_Port_Register_File dut (
     Clk, LE //Inputs
 );
 
-MUX2x1_4bits MUX2x1_ID_RD (
+MUX2x1_5bits MUX2x1_ID_RD (
     MUX2x1_ID_RD_OUT, // Outputs
     I29_25, 
     5'b01111, // 15 immediate for B parameter
@@ -205,7 +205,7 @@ Pipeline_Register_ID_EX ID_EX (
 );
 
 Hazards_Fowarding_Unit Hazard_Fwd_Unit(
-  ID_RF_Enable_OUT_REG, ID_RF_enable_MEM_Out, ID_RF_enable_OUT_WB, ID_Load_Instr_OUT
+  ID_RF_Enable_OUT_REG, ID_RF_enable_MEM_Out, ID_RF_enable_OUT_WB, ID_Load_Instr_OUT,
   I18_14, I4_0, I29_25,
   RD4_0_OUT_EX, RD_MEM_Out, RD_WB_OUT,
   HZ_S1_MUX, HZ_S2_MUX, HZ_S3_MUX,
@@ -213,12 +213,12 @@ Hazards_Fowarding_Unit Hazard_Fwd_Unit(
 );
 
 source_operand2_handler_sparc_component SO2_Handler( SO2_Handler_Out, //Output
-MX2_OUT, 
+MX2_OUT,
 I21_0_OUT,//Imm 
 {I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG} //Inputs
 );
 
-alu_sparc_component ALU( 
+alu_sparc_component ALU(  
 ALU_Out,  Z, N, C, V, //Outputs
 MX1_OUT, SO2_Handler_Out, ID_ALU_OP_OUT_REG, Cin_PSR
 );
@@ -1142,7 +1142,7 @@ module Reset_handler (input ID_Jumpl_instr, input IF_B_signal, input Glob_R, inp
 endmodule
 
 module Hazards_Fowarding_Unit (
-  input EX_RF_enable, MEM_RF_enable, WB_RF_enable, EX_load_instr
+  input EX_RF_enable, MEM_RF_enable, WB_RF_enable, EX_load_instr,
   input [4:0] ID_RS1, ID_RS2, ID_RD,
   input [4:0] EX_RD, MEM_RD, WB_RD,
   output reg [1:0] S1_MUX, S2_MUX, S3_MUX,
