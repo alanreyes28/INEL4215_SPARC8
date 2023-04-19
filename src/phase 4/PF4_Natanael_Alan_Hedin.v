@@ -204,6 +204,14 @@ Pipeline_Register_ID_EX ID_EX (
     Clr, Clk
 );
 
+Hazards_Fowarding_Unit Hazard_Fwd_Unit(
+  ID_RF_Enable_OUT_REG, ID_RF_enable_MEM_Out, ID_RF_enable_OUT_WB, ID_Load_Instr_OUT
+  I18_14, I4_0, I29_25,
+  RD4_0_OUT_EX, RD_MEM_Out, RD_WB_OUT,
+  HZ_S1_MUX, HZ_S2_MUX, HZ_S3_MUX,
+  ID_nPC_enable, ID_PC_enable, IF_ID_enable, MX_HFU
+);
+
 Pipeline_Register_EX_MEM EX_MEM (
     Out_Out, MX3_MEM_Out, PC_OUT_MEM, RD_MEM_Out,
     ID_RF_enable_MEM_Out, RAW_Enable_Out,
