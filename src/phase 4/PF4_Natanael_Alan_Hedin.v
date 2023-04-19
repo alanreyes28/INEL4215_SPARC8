@@ -24,7 +24,7 @@ wire [31:0] PC31_0, I31_0_2;
 wire I29;
 wire [4:0] I18_14, I4_0, I29_25,I29_25_2;
 wire [3:0] I28_25; 
-wire [21:0] I21_0,I21_0_2;
+  wire [21:0] I21_0,I21_0_2;
 
 
 // Parameters for ID/EX
@@ -60,8 +60,6 @@ reg [31:0] PC_MEM_In;
 wire [31:0] PW_WB;
 wire [4:0] RD_WB_OUT;
 wire ID_RF_enable_OUT_WB;
-reg [31:0] DO;
-reg [31:0] MEM_RD;
 
 // Parameters for Preload of ROM
 wire [31:0] PC_Out;
@@ -83,6 +81,12 @@ wire ID_nPC_enable, ID_PC_enable, IF_ID_enable, MX_HFU;
 
 // Parameters for Source Operand2 Handler 
 wire [31:0] SO2_Handler_Out;
+
+//Parameters for data memory 
+wire [31:0] DO;
+
+//Parameters MUX mem Stage
+wire [31:0] MEM_RD;
 
 Special_Register nPC (
     nPC_Out, // Output
@@ -165,6 +169,16 @@ MUX2x1_5bits MUX2x1_ID_RD (
     ID_Call_Instr // Inputs
 );
 
+RAM DataMemory(
+    DO,//Output
+    RAM_RW_Out,Out_Out,MX3_MEM_Out,RAM_Size_Out,RAM_SE_Out,RAW_Enable_Out //Inputs  
+);
+
+mux_4x1 MUX_MEM_Stage(
+    MEM_RD, //Output
+    ID_load_callOrJumpl_instr_MEM_Out,PC_OUT_MEM,Out_Out,DO,//inputs
+);
+
 Pipeline_Register_ID_EX ID_EX (
     //Outputs Parte Amarilla
 /**********************************/
@@ -213,12 +227,12 @@ Hazards_Fowarding_Unit Hazard_Fwd_Unit(
 );
 
 source_operand2_handler_sparc_component SO2_Handler( SO2_Handler_Out, //Output
-MX2_OUT,
+MX2_OUT, 
 I21_0_OUT,//Imm 
 {I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG} //Inputs
 );
 
-alu_sparc_component ALU(  
+alu_sparc_component ALU( 
 ALU_Out,  Z, N, C, V, //Outputs
 MX1_OUT, SO2_Handler_Out, ID_ALU_OP_OUT_REG, Cin_PSR
 );
@@ -228,7 +242,7 @@ Pipeline_Register_EX_MEM EX_MEM (
     ID_RF_enable_MEM_Out, RAW_Enable_Out,
     RAM_RW_Out, RAM_SE_Out, RAM_Size_Out,
     ID_load_callOrJumpl_instr_MEM_Out, // Outputs
-    Out_In, Z_In,V_In,N_In,C_In, MX3_MEM_In,
+    ALU_Out, Z_In,V_In,N_In,C_In, MX3_MEM_In,
     PC_MEM_In, RD4_0_OUT_EX, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,
     RAM_RW_OUT_REG, RAM_SE_OUT_REG, RAM_Size_OUT_REG,
     ID_Load_CallOrJumpl_Instr_OUT_REG, Clr, Clk //Inputs
@@ -1063,8 +1077,8 @@ module MUX2x1_5bits (output reg [4:0] Y, input [4:0] A, B, input S);
     end
 endmodule
 
-module mux_4x1 (output reg Y, input [1: 0] S,
-input A, B, C, D);
+module mux_4x1 (output reg [31:0] Y, input [1: 0] S,
+input [31:0] A, B, C, D);
 always @ (S, A, B, C, D)
 case (S)
 2'b00: Y = A;
