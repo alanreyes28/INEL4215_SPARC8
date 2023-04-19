@@ -31,13 +31,12 @@ wire [12:0] I12_0;
 // Parameters for ID/EX
 wire [31:0] MX1_OUT, MX2_OUT, MX3_OUT, PC_OUT;
 wire [12:0] I12_0_OUT;
-wire [4:0] RD4_0_OUT; 
+wire [4:0] RD4_0_OUT_EX; 
 wire [3:0] ID_ALU_OP_OUT_REG;
 wire I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG, ID_Load_Instr_OUT_REG, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG, ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG;
 wire [1:0] RAM_Size_OUT_REG, ID_Load_CallOrJumpl_Instr_OUT_REG;
 reg [31:0] MX1_IN,MX2_IN,MX3_IN,PC_IN;
 reg [12:0] I12_0_IN;
-reg [4:0] RD4_0_IN;
 reg I31_OUT_MUX,I30_OUT_MUX,I24_OUT_MUX,I13_OUT_MUX, ID_Load_Instr_OUT_MUX, ID_RF_Enable_OUT_MUX, RAM_Enable_OUT_MUX,RAM_RW_OUT_MUX,RAM_SE_OUT_MUX, ID_Jumpl_Instr_OUT_MUX,ID_Instr_Alter_CC_OUT_MUX;
 reg [3:0] ID_ALU_OP_OUT_MUX;
 reg [1:0] RAM_Size_OUT_MUX, ID_Load_CallOrJumpl_Instr_OUT_MUX;
@@ -46,7 +45,7 @@ reg [1:0] RAM_Size_OUT_MUX, ID_Load_CallOrJumpl_Instr_OUT_MUX;
 wire [31:0] Out_Out;
 wire [31:0] PC_OUT_MEM;
 wire [31:0] MX3_MEM_Out;
-wire [4:0]  RD_Out;
+wire [4:0]  RD_MEM_Out;
 wire ID_RF_enable_MEM_Out;
 wire RAW_Enable_Out;
 wire RAM_RW_Out;
@@ -57,11 +56,10 @@ reg [31:0] Out_In;
 reg Z_In,V_In,N_In,C_In;
 reg [31:0] MX3_MEM_In;
 reg [31:0] PC_MEM_In;
-reg [4:0] RD_MEM_In;
   
 //Parameters for MEM/WB
 wire [31:0] PW_WB;
-wire [4:0] RD_OUT_WB;
+wire [4:0] RD_WB_OUT;
 wire ID_RF_enable_OUT_WB;
 reg [31:0] DO;
 reg [31:0] MEM_RD;
@@ -73,6 +71,13 @@ integer file, code;
 
 // Parameters for Target Address
 wire [31:0] SE1_Out,SE2_Out, MUX2x1_ID_Target_Address_Out,Times4_Out,Adder_TA_Out;
+// Parameters Three_Port_Register_File
+reg [4:0] RA,RB,RC,RW;
+reg [31:0] PW;
+  wire [31:0] PA, PB, PC_RF;
+
+// Parameters for Multiplexer 2x1 for destination register in ID stage
+wire [4:0] MUX2x1_ID_RD_OUT;
 
 Special_Register nPC (
     nPC_Out, // Output
@@ -131,7 +136,7 @@ MUX2x1_ID_Target_Address_Out, //Output
 ID_B_Instr, SE2_Out, SE1_Out //Inputs
  );
 
- Multiply_by_4_box Times4 (
+  Multiply_by_4_box Times4 (
 MUX2x1_ID_Target_Address_Out,
 Times4_Out
 );
@@ -141,12 +146,26 @@ alu_sparc_component Adder_TA (
     Times4_Out, PC_Out, 4'b0000,  Cin // Inputs
  );
 
+Three_Port_Register_File dut (
+    I18_14,I4_0, I29_25,RD_WB_OUT,
+    RD_WB_OUT, //Inputs
+    PA, PB, PC_RF,//Outputs
+    Clk, LE //Inputs
+);
+
+MUX2x1_4bits MUX2x1_ID_RD (
+    MUX2x1_ID_RD_OUT, // Outputs
+    I29_25, 
+    4'b1111, // 15 immediate for B parameter
+    ID_Call_Instr // Inputs
+);
+
 Pipeline_Register_ID_EX ID_EX (
     //Outputs Parte Amarilla
 /**********************************/
     MX1_OUT, MX2_OUT,MX3_OUT,PC_OUT,
     I12_0_OUT,
-    RD4_0_OUT,
+    RD4_0_OUT_EX,
 /**********************************/
 
     //Outputs de parte Gris
@@ -164,7 +183,7 @@ Pipeline_Register_ID_EX ID_EX (
 /**********************************/
     MX1_IN,MX2_IN,MX3_IN,PC_IN,
     I12_0, //pendiente a ver si el nombre de esto causa problemas (no creo)
-    RD4_0_IN,
+    MUX2x1_ID_RD_OUT,
 /**********************************/
 
     //Inputs Parte Gris
@@ -181,19 +200,19 @@ Pipeline_Register_ID_EX ID_EX (
 );
 
 Pipeline_Register_EX_MEM EX_MEM (
-    Out_Out, MX3_MEM_Out, PC_OUT_MEM, RD_Out,
+    Out_Out, MX3_MEM_Out, PC_OUT_MEM, RD_MEM_Out,
     ID_RF_enable_MEM_Out, RAW_Enable_Out,
     RAM_RW_Out, RAM_SE_Out, RAM_Size_Out,
     ID_load_callOrJumpl_instr_MEM_Out, // Outputs
     Out_In, Z_In,V_In,N_In,C_In, MX3_MEM_In,
-    PC_MEM_In, RD_MEM_In, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,
+    PC_MEM_In, RD4_0_OUT_EX, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,
     RAM_RW_OUT_REG, RAM_SE_OUT_REG, RAM_Size_OUT_REG,
     ID_Load_CallOrJumpl_Instr_OUT_REG, Clr, Clk //Inputs
 );
 
 Pipeline_Register_MEM_WB MEM_WB(
-  	PW_WB,RD_OUT_WB,ID_RF_enable_OUT_WB, //Outputs
-    DO,MEM_RD,RD_Out,ID_RF_enable_MEM_Out, Clr, Clk //Inputs
+  	PW_WB,RD_WB_OUT,ID_RF_enable_OUT_WB, //Outputs
+    DO,MEM_RD,RD_MEM_Out,ID_RF_enable_MEM_Out, Clr, Clk //Inputs
 ); 
 
 // Preload Instruction Memory
@@ -700,7 +719,7 @@ Multiplexer_32x1 MuxA (RA,0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15,R
 
 Multiplexer_32x1 MuxB (RB,0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15,R16,R17,R18,R19,R20,R21,R22,R23,R24,R25,R26,R27,R28,R29,R30,R31,PB);
 
-  Multiplexer_32x1 MuxC (RC,0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15,R16,R17,R18,R19,R20,R21,R22,R23,R24,R25,R26,R27,R28,R29,R30,R31,PC);
+Multiplexer_32x1 MuxC (RC,0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15,R16,R17,R18,R19,R20,R21,R22,R23,R24,R25,R26,R27,R28,R29,R30,R31,PC);
 
 endmodule
 
@@ -1011,6 +1030,13 @@ module mux_2x1_TA (output reg [31:0] Y, input S, input [31:0] A, B);
 always @ (S, A, B)
 if (S) Y = B;
 else Y = A;
+endmodule
+
+module MUX2x1_4bits (output reg [4:0] Y, input [4:0] A, B, input S);
+    always @ (S, A, B) begin
+        if (S) Y = B;
+        else Y = A;
+    end
 endmodule
 
 module mux_4x1 (output reg Y, input [1: 0] S,
