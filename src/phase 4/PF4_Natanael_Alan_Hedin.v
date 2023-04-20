@@ -28,7 +28,7 @@ wire [3:0] I28_25;
 
 
 // Parameters for ID/EX
-wire [31:0] MX1_OUT, MX2_OUT, MX3_OUT, PC_OUT;
+wire [31:0] MX1_OUT, MX2_OUT, MX3_OUT, PC_OUT, PC_EX_OUT;
 wire [21:0] I21_0_OUT;
 wire [4:0] RD4_0_OUT_EX; 
 wire [3:0] ID_ALU_OP_OUT_REG;
@@ -152,7 +152,7 @@ Multiply_by_4_box Times4 (
 
 alu_sparc_component Adder_TA (
     Adder_TA_Out, Z_TA, N_TA, C_TA, V_TA, // Outputs
-    Times4_Out, PC_Out, 4'b0000,  Cin // Inputs
+    Times4_Out, PC31_0, 4'b0000,  Cin // Inputs
 );
 
 Three_Port_Register_File dut (
@@ -182,7 +182,7 @@ mux_4x1 MUX_MEM_Stage(
 Pipeline_Register_ID_EX ID_EX (
     //Outputs Parte Amarilla
 /**********************************/
-    MX1_OUT, MX2_OUT,MX3_OUT,PC_OUT,
+    MX1_OUT, MX2_OUT,MX3_OUT,PC_EX_OUT,
     I21_0_OUT,
     RD4_0_OUT_EX,
 /**********************************/
@@ -200,7 +200,7 @@ Pipeline_Register_ID_EX ID_EX (
 
     //Inputs Parte Amarilla
 /**********************************/
-    MX1_IN,MX2_IN,MX3_IN,PC_IN,
+    MX1_IN,MX2_IN,MX3_IN,PC31_0,
     I21_0_2, //pendiente a ver si el nombre de esto causa problemas (no creo)
     MUX2x1_ID_RD_OUT,
 /**********************************/
@@ -243,7 +243,7 @@ Pipeline_Register_EX_MEM EX_MEM (
     RAM_RW_Out, RAM_SE_Out, RAM_Size_Out,
     ID_load_callOrJumpl_instr_MEM_Out, // Outputs
     ALU_Out, Z_In,V_In,N_In,C_In, MX3_MEM_In,
-    PC_MEM_In, RD4_0_OUT_EX, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,
+    PC_EX_OUT, RD4_0_OUT_EX, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,
     RAM_RW_OUT_REG, RAM_SE_OUT_REG, RAM_Size_OUT_REG,
     ID_Load_CallOrJumpl_Instr_OUT_REG, Clr, Clk //Inputs
 );
