@@ -24,7 +24,7 @@ wire [31:0] PC31_0, I31_0_2;
 wire I29;
 wire [4:0] I18_14, I4_0, I29_25,I29_25_2;
 wire [3:0] I28_25; 
-  wire [21:0] I21_0,I21_0_2;
+wire [21:0] I21_0,I21_0_2;
 
 
 // Parameters for ID/EX
@@ -102,7 +102,11 @@ reg Glob_R; //Input that must be used somewhere...
 wire OR_OUT;
 
 // Parameters for PC/nPC Handler
-wire [1:0] PC_nPC_Handl_OUT;
+wire [1:0] ID_handl;
+
+// Parameters for MUX 4x1 in IF stage
+wire [31:0] MUX4x1_IF_OUT;
+reg [31:0] X_Input;
 
 or_box OR(
     IF_B,
@@ -113,7 +117,7 @@ or_box OR(
 PC_nPC_handler PC_NPC_Hand(
     ID_Jumpl_Instr_OUT_REG,
     OR_OUT, // Inputs
-    PC_nPC_Handl_OUT // Output
+    ID_handl // Output
 );
 
 Special_Register nPC (
@@ -121,14 +125,20 @@ Special_Register nPC (
     Adder_Out,LE,Clr,Clk // Inputs
 );
 
+mux_4x1 MUX4x1_IF(
+    MUX4x1_IF_OUT, // Output
+    ID_handl,
+    ALU_Out, nPC_Out, Adder_TA_Out, X_Input // Inputs
+);
+
 General_Register PC (
     PC_Out, // Output
-    nPC_Out,LE,Clr,Clk // Inputs
+    MUX4x1_IF_OUT,LE,Clr,Clk // Inputs
 );
 
 alu_sparc_component Adder (
     Adder_Out, Z_IF, N_IF, C_IF, V_IF, // Outputs
-    nPC_Out, 32'b00000000000000000000000000000100, 4'b0000,  Cin // Inputs
+    MUX4x1_IF_OUT, 32'b00000000000000000000000000000100, 4'b0000,  Cin // Inputs
  );
 
 ROM Instruction_Memory(
@@ -204,7 +214,8 @@ RAM DataMemory(
 
 mux_4x1 MUX_MEM_Stage(
     MEM_RD, //Output
-    ID_load_callOrJumpl_instr_MEM_Out,PC_OUT_MEM,Out_Out,DO,//inputs
+    ID_load_callOrJumpl_instr_MEM_Out,
+    PC_OUT_MEM,Out_Out,DO, X_Input//inputs
 );
 
 mux_4x1 MX3 (
