@@ -88,6 +88,10 @@ wire [31:0] DO;
 //Parameters MUX mem Stage
 wire [31:0] MEM_RD;
 
+//Parameters for Program Status Register and Condition Handler 
+wire [3:0]PSR_Out;
+wire IF_B, bit_C; 
+
 Special_Register nPC (
     nPC_Out, // Output
     Adder_Out,LE,Clr,Clk // Inputs
@@ -235,6 +239,17 @@ I21_0_OUT,//Imm
 alu_sparc_component ALU( 
 ALU_Out,  Z, N, C, V, //Outputs
 MX1_OUT, SO2_Handler_Out, ID_ALU_OP_OUT_REG, Cin_PSR
+);
+
+
+Program_Status_Register PSR (
+PSR_Out, bit_C, //Outputs
+ Z, N, C, V, LE, Clr, Clk //Inputs
+ );
+
+Condition_Handler CH (
+IF_B, //Outputs
+ I28_25, PSR_Out, ID_B_Instr //Input
 );
 
 Pipeline_Register_EX_MEM EX_MEM (
