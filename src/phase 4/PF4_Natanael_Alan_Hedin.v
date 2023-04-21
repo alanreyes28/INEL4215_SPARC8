@@ -90,11 +90,29 @@ wire [31:0] MEM_RD;
 
 //Parameters for Program Status Register and Condition Handler 
 wire [3:0]PSR_Out;
-wire IF_B, bit_C; 
+wire IF_B, bit_C;
 
 // Parameters for Reset Handler
 wire R; //Output
 reg Glob_R; //Input that must be used somewhere...
+
+// Parameters OR Box
+wire OR_OUT;
+
+// Parameters for PC/nPC Handler
+wire [1:0] PC_nPC_Handl_OUT;
+
+or_box OR(
+    IF_B,
+    ID_Call_Instr, // Inputs
+    OR_OUT // Output
+);
+
+PC_nPC_handler PC_NPC_Hand(
+    ID_Jumpl_Instr_OUT_REG,
+    OR_OUT, // Inputs
+    PC_nPC_Handl_OUT // Output
+);
 
 Special_Register nPC (
     nPC_Out, // Output
@@ -235,25 +253,25 @@ Hazards_Fowarding_Unit Hazard_Fwd_Unit(
 );
 
 source_operand2_handler_sparc_component SO2_Handler( SO2_Handler_Out, //Output
-MX2_OUT, 
-I21_0_OUT,//Imm 
-{I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG} //Inputs
+    MX2_OUT, 
+    I21_0_OUT,//Imm 
+    {I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG} //Inputs
 );
 
 alu_sparc_component ALU( 
-ALU_Out,  Z, N, C, V, //Outputs
-MX1_OUT, SO2_Handler_Out, ID_ALU_OP_OUT_REG, bit_C
+    ALU_Out,  Z, N, C, V, //Outputs
+    MX1_OUT, SO2_Handler_Out, ID_ALU_OP_OUT_REG, bit_C
 );
 
 
 Program_Status_Register PSR (
-PSR_Out, bit_C, //Outputs
- Z, N, C, V, LE, Clr, Clk //Inputs
- );
+    PSR_Out, bit_C, //Outputs
+    Z, N, C, V, LE, Clr, Clk //Inputs
+);
 
 Condition_Handler CH (
-IF_B, //Outputs
- I28_25, PSR_Out, ID_B_Instr //Input
+    IF_B, //Outputs
+    I28_25, PSR_Out, ID_B_Instr //Input
 );
 
 
