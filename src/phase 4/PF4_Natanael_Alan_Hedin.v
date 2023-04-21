@@ -5,7 +5,7 @@ module Sistema_De_Control_tb;
 reg select,Clr,Clk,LE;
 
 wire [31:0] nPC_Out,Adder_Out , DataOut, ALU_Out;
-reg Z_TA, N_TA, C_TA, V_TA, Z_IF, N_IF, C_IF, V_IF, Cin ,Z, N, C, V, Cin_PSR;
+reg Z_TA, N_TA, C_TA, V_TA, Z_IF, N_IF, C_IF, V_IF, Cin ,Z, N, C, V;
 
 // Parameters for CU
 wire  I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable,RAM_Enable, RAM_RW, RAM_SE,	ID_Jumpl_Instr, ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr; 
@@ -91,6 +91,10 @@ wire [31:0] MEM_RD;
 //Parameters for Program Status Register and Condition Handler 
 wire [3:0]PSR_Out;
 wire IF_B, bit_C; 
+
+// Parameters for Reset Handler
+wire R; //Output
+reg Glob_R; //Input that must be used somewhere...
 
 Special_Register nPC (
     nPC_Out, // Output
@@ -238,7 +242,7 @@ I21_0_OUT,//Imm
 
 alu_sparc_component ALU( 
 ALU_Out,  Z, N, C, V, //Outputs
-MX1_OUT, SO2_Handler_Out, ID_ALU_OP_OUT_REG, Cin_PSR
+MX1_OUT, SO2_Handler_Out, ID_ALU_OP_OUT_REG, bit_C
 );
 
 
@@ -250,6 +254,12 @@ PSR_Out, bit_C, //Outputs
 Condition_Handler CH (
 IF_B, //Outputs
  I28_25, PSR_Out, ID_B_Instr //Input
+);
+
+
+Reset_handler RH (
+ID_Jumpl_Instr_OUT_REG,  IF_B,  Glob_R, I29, //Input // Global reset se declara arriba, es el ultimo
+R //Output
 );
 
 Pipeline_Register_EX_MEM EX_MEM (
