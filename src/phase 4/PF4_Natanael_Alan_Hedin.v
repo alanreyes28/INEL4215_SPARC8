@@ -34,7 +34,7 @@ wire [4:0] RD4_0_OUT_EX;
 wire [3:0] ID_ALU_OP_OUT_REG;
 wire I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG, ID_Load_Instr_OUT_REG, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG, ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG;
 wire [1:0] RAM_Size_OUT_REG, ID_Load_CallOrJumpl_Instr_OUT_REG;
-reg [31:0] MX1_IN,MX2_IN,MX3_IN,PC_IN;
+reg [31:0] PC_IN;
 reg [21:0] I21_0_IN;
 reg I31_OUT_MUX,I30_OUT_MUX,I24_OUT_MUX,I13_OUT_MUX, ID_Load_Instr_OUT_MUX, ID_RF_Enable_OUT_MUX, RAM_Enable_OUT_MUX,RAM_RW_OUT_MUX,RAM_SE_OUT_MUX, ID_Jumpl_Instr_OUT_MUX,ID_Instr_Alter_CC_OUT_MUX;
 reg [3:0] ID_ALU_OP_OUT_MUX;
@@ -88,9 +88,11 @@ wire [31:0] DO;
 //Parameters MUX mem Stage
 wire [31:0] MEM_RD;
 
+//Parameters for  MUX: MX1 MX2 MX3
+wire [31:0] MX1_MUX_OUT, MX2_MUX_OUT, MX3_MUX_OUT;
 //Parameters for Program Status Register and Condition Handler 
 wire [3:0]PSR_Out;
-wire IF_B, bit_C;
+wire IF_B, bit_C; 
 
 // Parameters for Reset Handler
 wire R; //Output
@@ -205,6 +207,24 @@ mux_4x1 MUX_MEM_Stage(
     ID_load_callOrJumpl_instr_MEM_Out,PC_OUT_MEM,Out_Out,DO,//inputs
 );
 
+mux_4x1 MX3 (
+    MX3_MUX_OUT, //Output 
+    HZ_S3_MUX,
+    PC_RF,PW_WB,ALU_Out,MEM_RD//Inputs
+);
+
+mux_4x1 MX2 (
+    MX2_MUX_OUT, //Output 
+    HZ_S2_MUX,
+    PB,PW_WB,ALU_Out,MEM_RD//Inputs
+);
+
+mux_4x1 MX1 (
+    MX1_MUX_OUT, //Output 
+    HZ_S2_MUX,
+    PA,PW_WB,ALU_Out,MEM_RD//Inputs
+);
+
 Pipeline_Register_ID_EX ID_EX (
     //Outputs Parte Amarilla
 /**********************************/
@@ -226,7 +246,7 @@ Pipeline_Register_ID_EX ID_EX (
 
     //Inputs Parte Amarilla
 /**********************************/
-    MX1_IN,MX2_IN,MX3_IN,PC31_0,
+    MX1_MUX_OUT, MX2_MUX_OUT, MX3_MUX_OUT,PC31_0,
     I21_0_2, //pendiente a ver si el nombre de esto causa problemas (no creo)
     MUX2x1_ID_RD_OUT,
 /**********************************/
@@ -253,25 +273,25 @@ Hazards_Fowarding_Unit Hazard_Fwd_Unit(
 );
 
 source_operand2_handler_sparc_component SO2_Handler( SO2_Handler_Out, //Output
-    MX2_OUT, 
-    I21_0_OUT,//Imm 
-    {I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG} //Inputs
+MX2_OUT, 
+I21_0_OUT,//Imm 
+{I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG} //Inputs
 );
 
 alu_sparc_component ALU( 
-    ALU_Out,  Z, N, C, V, //Outputs
-    MX1_OUT, SO2_Handler_Out, ID_ALU_OP_OUT_REG, bit_C
+ALU_Out,  Z, N, C, V, //Outputs
+MX1_OUT, SO2_Handler_Out, ID_ALU_OP_OUT_REG, bit_C
 );
 
 
 Program_Status_Register PSR (
-    PSR_Out, bit_C, //Outputs
-    Z, N, C, V, LE, Clr, Clk //Inputs
-);
+PSR_Out, bit_C, //Outputs
+ Z, N, C, V, LE, Clr, Clk //Inputs
+ );
 
 Condition_Handler CH (
-    IF_B, //Outputs
-    I28_25, PSR_Out, ID_B_Instr //Input
+IF_B, //Outputs
+ I28_25, PSR_Out, ID_B_Instr //Input
 );
 
 
@@ -285,7 +305,7 @@ Pipeline_Register_EX_MEM EX_MEM (
     ID_RF_enable_MEM_Out, RAW_Enable_Out,
     RAM_RW_Out, RAM_SE_Out, RAM_Size_Out,
     ID_load_callOrJumpl_instr_MEM_Out, // Outputs
-    ALU_Out, Z_In,V_In,N_In,C_In, MX3_MEM_In,
+    ALU_Out, Z_In,V_In,N_In,C_In, MX3_MUX_OUT,
     PC_EX_OUT, RD4_0_OUT_EX, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,
     RAM_RW_OUT_REG, RAM_SE_OUT_REG, RAM_Size_OUT_REG,
     ID_Load_CallOrJumpl_Instr_OUT_REG, Clr, Clk //Inputs
