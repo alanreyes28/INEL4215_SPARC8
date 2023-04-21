@@ -24,7 +24,7 @@ wire [31:0] PC31_0, I31_0_2;
 wire I29;
 wire [4:0] I18_14, I4_0, I29_25,I29_25_2;
 wire [3:0] I28_25; 
-wire [21:0] I21_0,I21_0_2;
+  wire [21:0] I21_0,I21_0_2;
 
 
 // Parameters for ID/EX
@@ -122,7 +122,7 @@ PC_nPC_handler PC_NPC_Hand(
 
 Special_Register nPC (
     nPC_Out, // Output
-    Adder_Out,LE,Clr,Clk // Inputs
+    Adder_Out,ID_nPC_enable,Glob_R,Clk // Inputs
 );
 
 mux_4x1 MUX4x1_IF(
@@ -133,7 +133,7 @@ mux_4x1 MUX4x1_IF(
 
 General_Register PC (
     PC_Out, // Output
-    MUX4x1_IF_OUT,LE,Clr,Clk // Inputs
+    MUX4x1_IF_OUT,ID_PC_enable,Glob_R,Clk // Inputs
 );
 
 alu_sparc_component Adder (
@@ -165,7 +165,7 @@ ctrl_unit_mux_2x1 CU_MUX(
 Pipeline_Register_IF_ID IF_ID (
     I21_0, I29_0, PC31_0, I29, I18_14, I4_0,
     I29_25, I28_25, I21_0_2, I31_0_2, I29_25_2, // Outputs
-    DataOut, PC_Out, Clr, Clk // Inputs
+    DataOut, PC_Out, IF_ID_enable, R, Clk // Inputs
 );
 
 SE_box1 SE1(
@@ -272,15 +272,15 @@ Pipeline_Register_ID_EX ID_EX (
     ID_Jumpl_Instr_OUT,ID_Instr_Alter_CC_OUT,
     ID_Load_CallOrJumpl_Instr_OUT,
 /**********************************/
-    Clr, Clk
+    Glob_R, Clk
 );
 
 Hazards_Fowarding_Unit Hazard_Fwd_Unit(
   ID_RF_Enable_OUT_REG, ID_RF_enable_MEM_Out, ID_RF_enable_OUT_WB, ID_Load_Instr_OUT,
   I18_14, I4_0, I29_25,
-  RD4_0_OUT_EX, RD_MEM_Out, RD_WB_OUT,
+  RD4_0_OUT_EX, RD_MEM_Out, RD_WB_OUT, //Inputs
   HZ_S1_MUX, HZ_S2_MUX, HZ_S3_MUX,
-  ID_nPC_enable, ID_PC_enable, IF_ID_enable, MX_HFU
+  ID_nPC_enable, ID_PC_enable, IF_ID_enable, MX_HFU//Outputs
 );
 
 source_operand2_handler_sparc_component SO2_Handler( SO2_Handler_Out, //Output
@@ -297,7 +297,7 @@ MX1_OUT, SO2_Handler_Out, ID_ALU_OP_OUT_REG, bit_C
 
 Program_Status_Register PSR (
 PSR_Out, bit_C, //Outputs
- Z, N, C, V, LE, Clr, Clk //Inputs
+ Z, N, C, V, ID_Instr_Alter_CC_OUT_REG, 0, Clk //Inputs
  );
 
 Condition_Handler CH (
@@ -319,12 +319,12 @@ Pipeline_Register_EX_MEM EX_MEM (
     ALU_Out, Z_In,V_In,N_In,C_In, MX3_MUX_OUT,
     PC_EX_OUT, RD4_0_OUT_EX, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,
     RAM_RW_OUT_REG, RAM_SE_OUT_REG, RAM_Size_OUT_REG,
-    ID_Load_CallOrJumpl_Instr_OUT_REG, Clr, Clk //Inputs
+    ID_Load_CallOrJumpl_Instr_OUT_REG, Glob_R, Clk //Inputs
 );
 
 Pipeline_Register_MEM_WB MEM_WB(
   	PW_WB,RD_WB_OUT,ID_RF_enable_OUT_WB, //Outputs
-    DO,MEM_RD,RD_MEM_Out,ID_RF_enable_MEM_Out, Clr, Clk //Inputs
+    DO,MEM_RD,RD_MEM_Out,ID_RF_enable_MEM_Out, Glob_R, Clk //Inputs
 ); 
 
 // Preload Instruction Memory
@@ -340,7 +340,7 @@ initial begin
     $fclose(file);
 end
 
-initial #54 $finish;
+initial #70 $finish;
   
 initial begin
   Cin = 1;
@@ -352,8 +352,10 @@ initial begin
 end
 
 initial begin
-  Clr = 1'b1;
-  #3 Clr = 1'b0;
+  //Clr = 1'b1;
+  Glob_R = 1'b1;
+  #3 //Clr = 1'b0;
+  Glob_R = 1'b0;
 end
 
 initial begin
@@ -364,7 +366,8 @@ end
 
 initial begin
   $display("PF3 Control System Results:");
-  $monitor("0) Time: %0t\n1) Instruction, PC, nPC:\n-Instr going to CU = %b, PC = %d, nPC = %d\n2) Ouputs of the Control Unit:\n-I31 = %b, I30 = %b, I24 = %b, I13 = %b, ID_Load_Instr = %b, ID_RF_Enable = %b, RAM_Enable = %b, RAM_RW = %b, RAM_SE = %b, ID_Jumpl_Instr = %b, ID_Instr_Alter_CC = %b, ID_B_Instr = %b, ID_Call_Instr = %b, RAM_Size = %b, ID_Load_CallOrJumpl_Instr = %b, ID_ALU_OP = %b\n3) Outputs of EX stage:\n-I31_OUT_REG = %b,I30_OUT_REG = %b,I24_OUT_REG = %b,I13_OUT_REG = %b, ID_Load_Instr_OUT_REG, = %b, ID_ALU_OP_OUT_REG = %b, ID_RF_Enable_OUT_REG = %b, RAM_Enable_OUT_REG = %b,RAM_RW_OUT_REG = %b,RAM_SE_OUT_REG = %b, RAM_Size_OUT_REG = %b, ID_Jumpl_Instr_OUT_REG = %b,ID_Instr_Alter_CC_OUT_REG = %b, ID_Load_CallOrJumpl_Instr_OUT_REG = %b\n4) Outputs of MEM stage:\n-ID_RF_enable_MEM_Out = %b, RAW_Enable_Out = %b, RAM_RW_Out = %b, RAM_SE_Out = %b, RAM_Size_Out = %b, ID_load_callOrJumpl_instr_MEM_Out = %b\n5) Outputs of WB Stage:\n-ID_RF_enable_OUT_WB = %b \n6) Monitoring the ID Stage SE1_Out = %b ,SE2_Out = %b, MUX2x1_ID_Target_Address_Out = %b,Times4_Out = %b , Adder_TA_Out = %b , PC_Out of ID = %b", $time,I31_0_2, PC_Out, nPC_Out,   I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable, RAM_Enable, RAM_RW, RAM_SE, ID_Jumpl_Instr, ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr, RAM_Size, ID_Load_CallOrJumpl_Instr, ID_ALU_OP,   I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG,ID_Load_Instr_OUT_REG,ID_ALU_OP_OUT_REG, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG,RAM_Size_OUT_REG,ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG,ID_Load_CallOrJumpl_Instr_OUT_REG,   ID_RF_enable_MEM_Out, RAW_Enable_Out, RAM_RW_Out, RAM_SE_Out, RAM_Size_Out, ID_load_callOrJumpl_instr_MEM_Out,ID_RF_enable_OUT_WB,SE1_Out,SE2_Out, MUX2x1_ID_Target_Address_Out,Times4_Out, Adder_TA_Out, PC_Out);
+ $monitor("0) Time: %0t\n1) Instruction, PC, nPC:\n-Instr going to CU = %b, PC = %d, nPC = %d\n2) Ouputs of the Control Unit:\n-I31 = %b, I30 = %b, I24 = %b, I13 = %b, ID_Load_Instr = %b, ID_RF_Enable = %b, RAM_Enable = %b, RAM_RW = %b, RAM_SE = %b, ID_Jumpl_Instr = %b, ID_Instr_Alter_CC = %b, ID_B_Instr = %b, ID_Call_Instr = %b, RAM_Size = %b, ID_Load_CallOrJumpl_Instr = %b, ID_ALU_OP = %b\n3) Outputs of EX stage:\n-I31_OUT_REG = %b,I30_OUT_REG = %b,I24_OUT_REG = %b,I13_OUT_REG = %b, ID_Load_Instr_OUT_REG, = %b, ID_ALU_OP_OUT_REG = %b, ID_RF_Enable_OUT_REG = %b, RAM_Enable_OUT_REG = %b,RAM_RW_OUT_REG = %b,RAM_SE_OUT_REG = %b, RAM_Size_OUT_REG = %b, ID_Jumpl_Instr_OUT_REG = %b,ID_Instr_Alter_CC_OUT_REG = %b, ID_Load_CallOrJumpl_Instr_OUT_REG = %b\n4) Outputs of MEM stage:\n-ID_RF_enable_MEM_Out = %b, RAW_Enable_Out = %b, RAM_RW_Out = %b, RAM_SE_Out = %b, RAM_Size_Out = %b, ID_load_callOrJumpl_instr_MEM_Out = %b\n5) Outputs of WB Stage:\n-ID_RF_enable_OUT_WB = %b \n6) Monitoring the ID Stage SE1_Out = %b ,SE2_Out = %b, MUX2x1_ID_Target_Address_Out = %b,Times4_Out = %b , Adder_TA_Out = %b , PC_Out of ID = %b\n", $time,I31_0_2, PC_Out, nPC_Out,   I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable, RAM_Enable, RAM_RW, RAM_SE, ID_Jumpl_Instr, ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr, RAM_Size, ID_Load_CallOrJumpl_Instr, ID_ALU_OP,   I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG,ID_Load_Instr_OUT_REG,ID_ALU_OP_OUT_REG, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG,RAM_Size_OUT_REG,ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG,ID_Load_CallOrJumpl_Instr_OUT_REG,   ID_RF_enable_MEM_Out, RAW_Enable_Out, RAM_RW_Out, RAM_SE_Out, RAM_Size_Out, ID_load_callOrJumpl_instr_MEM_Out,ID_RF_enable_OUT_WB,SE1_Out,SE2_Out, MUX2x1_ID_Target_Address_Out,Times4_Out, Adder_TA_Out, PC_Out);
+//$monitor("R = %b ,GlobR = %b, ID_nPC_enable = %b, ID_PC_enable = %b, IF_ID_enable = %b \n",R,Glob_R,ID_nPC_enable, ID_PC_enable, IF_ID_enable );
 end
 
 endmodule
@@ -582,7 +585,7 @@ module Pipeline_Register_IF_ID (output reg [21:0] I21_0,
                                 output reg [31:0] I31_0, 
                                 output reg [4:0] I29_25_2, //pal mux
                                 input [31:0] InstuctionMemoryOut, PC , 
-                                input  Clr, Clk);
+                                input  LE, Clr, Clk);
     always @ (posedge Clk) begin//rising edge triggered Register
         if (Clr) begin //tar pendiente por si explota
             I21_0 <= 22'b0; 
@@ -597,7 +600,7 @@ module Pipeline_Register_IF_ID (output reg [21:0] I21_0,
             I31_0 <= 32'b0; 
             I29_25_2 <= 5'b0; 
         end
-        else begin
+        else if (LE) begin
             I21_0 <= InstuctionMemoryOut[21:0]; 
             I29_0 <= InstuctionMemoryOut[29:0]; 
             PC31_0 <= PC; 
