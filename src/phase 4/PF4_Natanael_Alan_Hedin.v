@@ -232,7 +232,7 @@ mux_4x1 MX2 (
 
 mux_4x1 MX1 (
     MX1_MUX_OUT, //Output 
-    HZ_S2_MUX,
+    HZ_S1_MUX,
     PA,PW_WB,ALU_Out,MEM_RD//Inputs
 );
 
