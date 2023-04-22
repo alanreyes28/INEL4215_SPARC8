@@ -24,7 +24,7 @@ wire [31:0] PC31_0, I31_0_2;
 wire I29;
 wire [4:0] I18_14, I4_0, I29_25,I29_25_2;
 wire [3:0] I28_25; 
-  wire [21:0] I21_0,I21_0_2;
+wire [21:0] I21_0,I21_0_2;
 
 
 // Parameters for ID/EX
@@ -159,7 +159,7 @@ ctrl_unit_mux_2x1 CU_MUX(
     ID_ALU_OP_OUT, ID_Jumpl_Instr_OUT, ID_Instr_Alter_CC_OUT, ID_Load_CallOrJumpl_Instr_OUT, // Outputs
     I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable, 
     ID_ALU_OP, ID_Jumpl_Instr, ID_Instr_Alter_CC, 
-    ID_Load_CallOrJumpl_Instr, select // Inputs
+    ID_Load_CallOrJumpl_Instr, MX_HFU // Inputs
 ); 
 
 Pipeline_Register_IF_ID IF_ID (
@@ -184,8 +184,8 @@ mux_2x1_TA MUX2x1_ID_Target_Address (
  );
 
 Multiply_by_4_box Times4 (
-    MUX2x1_ID_Target_Address_Out,
-    Times4_Out
+    MUX2x1_ID_Target_Address_Out, // Input
+    Times4_Out // Output
 );
 
 alu_sparc_component Adder_TA (
@@ -197,12 +197,12 @@ Three_Port_Register_File dut (
     I18_14, I4_0, I29_25, RD_WB_OUT,
     PW_WB, //Inputs
     PA, PB, PC_RF,//Outputs
-    Clk, LE //Inputs
+    Clk, ID_RF_enable_OUT_WB //Inputs
 );
 
 MUX2x1_5bits MUX2x1_ID_RD (
     MUX2x1_ID_RD_OUT, // Outputs
-    I29_25, 
+    I29_25_2, 
     5'b01111, // 15 immediate for B parameter
     ID_Call_Instr // Inputs
 );
@@ -276,7 +276,7 @@ Pipeline_Register_ID_EX ID_EX (
 );
 
 Hazards_Fowarding_Unit Hazard_Fwd_Unit(
-  ID_RF_Enable_OUT_REG, ID_RF_enable_MEM_Out, ID_RF_enable_OUT_WB, ID_Load_Instr_OUT,
+  ID_RF_Enable_OUT_REG, ID_RF_enable_MEM_Out, ID_RF_enable_OUT_WB, ID_Load_Instr_OUT_REG,
   I18_14, I4_0, I29_25,
   RD4_0_OUT_EX, RD_MEM_Out, RD_WB_OUT, //Inputs
   HZ_S1_MUX, HZ_S2_MUX, HZ_S3_MUX,
@@ -291,18 +291,18 @@ I21_0_OUT,//Imm
 
 alu_sparc_component ALU( 
 ALU_Out,  Z, N, C, V, //Outputs
-MX1_OUT, SO2_Handler_Out, ID_ALU_OP_OUT_REG, bit_C
+MX1_OUT, SO2_Handler_Out, ID_ALU_OP_OUT_REG, bit_C // Inputs
 );
 
 
 Program_Status_Register PSR (
-PSR_Out, bit_C, //Outputs
- Z, N, C, V, ID_Instr_Alter_CC_OUT_REG, 0, Clk //Inputs
- );
+    PSR_Out, bit_C, //Outputs
+    Z, N, C, V, ID_Instr_Alter_CC_OUT_REG, 0, Clk //Inputs
+);
 
 Condition_Handler CH (
-IF_B, //Outputs
- I28_25, PSR_Out, ID_B_Instr //Input
+    IF_B, //Outputs
+    I28_25, PSR_Out, ID_B_Instr //Input
 );
 
 
@@ -316,7 +316,7 @@ Pipeline_Register_EX_MEM EX_MEM (
     ID_RF_enable_MEM_Out, RAW_Enable_Out,
     RAM_RW_Out, RAM_SE_Out, RAM_Size_Out,
     ID_load_callOrJumpl_instr_MEM_Out, // Outputs
-    ALU_Out, Z_In,V_In,N_In,C_In, MX3_MUX_OUT,
+    ALU_Out, Z, V, N, C, MX3_OUT,
     PC_EX_OUT, RD4_0_OUT_EX, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,
     RAM_RW_OUT_REG, RAM_SE_OUT_REG, RAM_Size_OUT_REG,
     ID_Load_CallOrJumpl_Instr_OUT_REG, Glob_R, Clk //Inputs
