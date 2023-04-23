@@ -193,7 +193,7 @@ alu_sparc_component Adder_TA (
     Times4_Out, PC31_0, 4'b0000,  Cin // Inputs
 );
 
-Three_Port_Register_File dut (
+Three_Port_Register_File RF (
     I18_14, I4_0, I29_25, RD_WB_OUT,
     PW_WB, //Inputs
     PA, PB, PC_RF,//Outputs
@@ -209,7 +209,7 @@ MUX2x1_5bits MUX2x1_ID_RD (
 
 RAM DataMemory(
     DO,//Output
-    RAM_RW_Out,Out_Out,MX3_MEM_Out,RAM_Size_Out,RAM_SE_Out,RAW_Enable_Out //Inputs  
+    RAM_RW_Out,Out_Out[8:0],MX3_MEM_Out,RAM_Size_Out,RAM_SE_Out,RAW_Enable_Out //Inputs  
 );
 
 mux_4x1 MUX_MEM_Stage(
@@ -307,7 +307,7 @@ Condition_Handler CH (
 
 
 Reset_handler RH (
-ID_Jumpl_Instr_OUT_REG,  IF_B,  Glob_R, I29, //Input // Global reset se declara arriba, es el ultimo
+ID_Jumpl_Instr_OUT_REG,  IF_B,  Glob_R, I29, ID_B_Instr, //Input // Global reset se declara arriba, es el ultimo
 R //Output
 );
 
@@ -335,16 +335,13 @@ initial begin
         while (!$feof(file)) begin 
             code = $fscanf(file, "%b", DataIn);
             Instruction_Memory.mem[InstrIn] = DataIn;
+            DataMemory.mem[InstrIn] = DataIn;
             InstrIn = InstrIn + 1;
         end
     $fclose(file);
 end
 
 initial #70 $finish;
-  
-initial begin
-  Cin = 1;
-end
 
 initial begin
   Clk = 0;
@@ -352,10 +349,8 @@ initial begin
 end
 
 initial begin
-  //Clr = 1'b1;
   Glob_R = 1'b1;
-  #3 //Clr = 1'b0;
-  Glob_R = 1'b0;
+  #3 Glob_R = 1'b0;
 end
 
 initial begin
@@ -365,9 +360,25 @@ initial begin
 end
 
 initial begin
-  $display("PF3 Control System Results:");
- $monitor("0) Time: %0t\n1) Instruction, PC, nPC:\n-Instr going to CU = %b, PC = %d, nPC = %d\n2) Ouputs of the Control Unit:\n-I31 = %b, I30 = %b, I24 = %b, I13 = %b, ID_Load_Instr = %b, ID_RF_Enable = %b, RAM_Enable = %b, RAM_RW = %b, RAM_SE = %b, ID_Jumpl_Instr = %b, ID_Instr_Alter_CC = %b, ID_B_Instr = %b, ID_Call_Instr = %b, RAM_Size = %b, ID_Load_CallOrJumpl_Instr = %b, ID_ALU_OP = %b\n3) Outputs of EX stage:\n-I31_OUT_REG = %b,I30_OUT_REG = %b,I24_OUT_REG = %b,I13_OUT_REG = %b, ID_Load_Instr_OUT_REG, = %b, ID_ALU_OP_OUT_REG = %b, ID_RF_Enable_OUT_REG = %b, RAM_Enable_OUT_REG = %b,RAM_RW_OUT_REG = %b,RAM_SE_OUT_REG = %b, RAM_Size_OUT_REG = %b, ID_Jumpl_Instr_OUT_REG = %b,ID_Instr_Alter_CC_OUT_REG = %b, ID_Load_CallOrJumpl_Instr_OUT_REG = %b\n4) Outputs of MEM stage:\n-ID_RF_enable_MEM_Out = %b, RAW_Enable_Out = %b, RAM_RW_Out = %b, RAM_SE_Out = %b, RAM_Size_Out = %b, ID_load_callOrJumpl_instr_MEM_Out = %b\n5) Outputs of WB Stage:\n-ID_RF_enable_OUT_WB = %b \n6) Monitoring the ID Stage SE1_Out = %b ,SE2_Out = %b, MUX2x1_ID_Target_Address_Out = %b,Times4_Out = %b , Adder_TA_Out = %b , PC_Out of ID = %b\n", $time,I31_0_2, PC_Out, nPC_Out,   I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable, RAM_Enable, RAM_RW, RAM_SE, ID_Jumpl_Instr, ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr, RAM_Size, ID_Load_CallOrJumpl_Instr, ID_ALU_OP,   I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG,ID_Load_Instr_OUT_REG,ID_ALU_OP_OUT_REG, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG,RAM_Size_OUT_REG,ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG,ID_Load_CallOrJumpl_Instr_OUT_REG,   ID_RF_enable_MEM_Out, RAW_Enable_Out, RAM_RW_Out, RAM_SE_Out, RAM_Size_Out, ID_load_callOrJumpl_instr_MEM_Out,ID_RF_enable_OUT_WB,SE1_Out,SE2_Out, MUX2x1_ID_Target_Address_Out,Times4_Out, Adder_TA_Out, PC_Out);
-//$monitor("R = %b ,GlobR = %b, ID_nPC_enable = %b, ID_PC_enable = %b, IF_ID_enable = %b \n",R,Glob_R,ID_nPC_enable, ID_PC_enable, IF_ID_enable );
+  $display("PF4 Control System Results:");
+  //IF/ID Monitor:
+  //$monitor("Time: %0t\nPC = %d, Instr entering CU = %b, I21_0 = %b, I29_0 = %b, PC31_0 = %b, I29 = %b, I18_14 = %b, I4_0 = %b, I29_25 = %b, I28_25 = %b, I21_0_2 = %b, I31_0_2 = %b, I29_25_2 = %b\n", $time, PC_Out, I31_0_2, I21_0, I29_0, PC31_0, I29, I18_14, I4_0, I29_25, I28_25, I21_0_2, I31_0_2, I29_25_2);
+  //ID/EX Monitor:
+  //$monitor("Time: %0t\nPC = %d, Instr entering CU = %b,MX1_OUT %b, MX2_OUT %b,MX3_OUT %b,PC_EX_OUT %b,I21_0_OUT %b,RD4_0_OUT_EX %b, I31_OUT_REG %b,I30_OUT_REG %b,I24_OUT_REG %b,I13_OUT_REG %b,ID_Load_Instr_OUT_REG %b,ID_ALU_OP_OUT_REG %b,ID_RF_Enable_OUT_REG %b, RAM_Enable_OUT_REG %b,RAM_RW_OUT_REG %b,RAM_SE_OUT_REG %b,RAM_Size_OUT_REG %b,ID_Jumpl_Instr_OUT_REG %b,ID_Instr_Alter_CC_OUT_REG %b,ID_Load_CallOrJumpl_Instr_OUT_REG %b\n", $time, PC_Out, I31_0_2,MX1_OUT, MX2_OUT,MX3_OUT,PC_EX_OUT,I21_0_OUT,RD4_0_OUT_EX, I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG,ID_Load_Instr_OUT_REG,ID_ALU_OP_OUT_REG,ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG,RAM_Size_OUT_REG,ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG,ID_Load_CallOrJumpl_Instr_OUT_REG);
+  //EX/MEM Monitor:
+  //$monitor("Time: %0t\nPC = %d, Instr entering CU = %b, Out_Out = %b, MX3_MEM_Out = %b, PC_OUT_MEM = %b, RD_MEM_Out = %b,ID_RF_enable_MEM_Out = %b, RAW_Enable_Out = %b,RAM_RW_Out = %b, RAM_SE_Out = %b, RAM_Size_Out = %b,ID_load_callOrJumpl_instr_MEM_Out = %b\n", $time, PC_Out, I31_0_2,MX1_OUT,Out_Out, MX3_MEM_Out, PC_OUT_MEM, RD_MEM_Out,ID_RF_enable_MEM_Out, RAW_Enable_Out,RAM_RW_Out, RAM_SE_Out, RAM_Size_Out,ID_load_callOrJumpl_instr_MEM_Out);
+  //MEM/WB Monitor:
+  //$monitor("Time: %0t\nPC = %d, Instr entering CU = %b, PW_WB = %b,RD_WB_OUT = %b,ID_RF_enable_OUT_WB = %b\n", $time, PC_Out, I31_0_2,MX1_OUT, PW_WB,RD_WB_OUT,ID_RF_enable_OUT_WB);
+
+  // Registers from RF:
+  $monitor("Time: %0t\nPC = %d, Instr entering CU = %b, R = %b, ID_Jumpl = %b,  IF_B = %b,  Glob_R = %b, I29 = %b, R5 = %d, R6 = %d, R16 = %d, R17 = %d, R18 = %d, I18_14 = %d, I4_0 = %d, I29_25 = %d, PA = %d, PB = %d, PC_RF = %d, ALU A = %d, R = %d, Imm = %b, I31 = %d,I30= %d,I24 = %d,I13= %d, ALU B = %d, ALU_Out = %d, Out_Out = %b, ID_load_callOrJumpl_instr_MEM_Out = %b, RAM_RW_Out = %b,RAM_Size_Out = %b,RAM_SE_Out =%b,RAW_Enable_Out =%b, DataMemoryOut(DO) = %b, MEM_RD = %d, ID_RF_enable_OUT_WB = %b, PW_WB = %b, RD_WB_OUT = %d\n", $time, PC_Out, I31_0_2, R, ID_Jumpl_Instr_OUT_REG,  IF_B,  Glob_R, I29, RF.R5, RF.R6, RF.R16, RF.R17, RF.R18, I18_14, I4_0, I29_25, PA, PB, PC_RF, MX1_OUT, MX2_OUT, I21_0_OUT, I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG, SO2_Handler_Out, ALU_Out, Out_Out, ID_load_callOrJumpl_instr_MEM_Out, RAM_RW_Out,RAM_Size_Out,RAM_SE_Out,RAW_Enable_Out, DO, MEM_RD, ID_RF_enable_OUT_WB, PW_WB, RD_WB_OUT);
+  
+  // R1 R2 R3 R5
+  //$monitor("Time: %0t\nPC = %d, Instr entering CU = %b, R = %b, ID_Jumpl = %b,  IF_B = %b,  Glob_R = %b, I29 = %b, R1 = %d, R2 = %d, R3 = %d, R5 = %d, I18_14 = %d, I4_0 = %d, I29_25 = %d, PA = %d, PB = %d, PC_RF = %d, ALU A = %d, R = %d, Imm = %b, I31 = %d,I30= %d,I24 = %d,I13= %d, ALU B = %d, ALU_Out = %d, Out_Out = %b, ID_load_callOrJumpl_instr_MEM_Out = %b, RAM_RW_Out = %b,RAM_Size_Out = %b,RAM_SE_Out =%b,RAW_Enable_Out =%b, DataMemoryOut(DO) = %b, MEM_RD = %d, ID_RF_enable_OUT_WB = %b, PW_WB = %b, RD_WB_OUT = %d\n", $time, PC_Out, I31_0_2, R, ID_Jumpl_Instr_OUT_REG,  IF_B,  Glob_R, I29, RF.R1, RF.R2, RF.R3, RF.R5, I18_14, I4_0, I29_25, PA, PB, PC_RF, MX1_OUT, MX2_OUT, I21_0_OUT, I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG, SO2_Handler_Out, ALU_Out, Out_Out, ID_load_callOrJumpl_instr_MEM_Out, RAM_RW_Out,RAM_Size_Out,RAM_SE_Out,RAW_Enable_Out, DO, MEM_RD, ID_RF_enable_OUT_WB, PW_WB, RD_WB_OUT);
+
+  //$monitor("0) Time: %0t\n1) Instruction, PC, nPC:\n-Instr going to CU = %b, PC = %d, nPC = %d\n2) Ouputs of the Control Unit:\n-I31 = %b, I30 = %b, I24 = %b, I13 = %b, ID_Load_Instr = %b, ID_RF_Enable = %b, RAM_Enable = %b, RAM_RW = %b, RAM_SE = %b, ID_Jumpl_Instr = %b, ID_Instr_Alter_CC = %b, ID_B_Instr = %b, ID_Call_Instr = %b, RAM_Size = %b, ID_Load_CallOrJumpl_Instr = %b, ID_ALU_OP = %b\n3) Outputs of EX stage:\n-I31_OUT_REG = %b,I30_OUT_REG = %b,I24_OUT_REG = %b,I13_OUT_REG = %b, ID_Load_Instr_OUT_REG, = %b, ID_ALU_OP_OUT_REG = %b, ID_RF_Enable_OUT_REG = %b, RAM_Enable_OUT_REG = %b,RAM_RW_OUT_REG = %b,RAM_SE_OUT_REG = %b, RAM_Size_OUT_REG = %b, ID_Jumpl_Instr_OUT_REG = %b,ID_Instr_Alter_CC_OUT_REG = %b, ID_Load_CallOrJumpl_Instr_OUT_REG = %b\n4) Outputs of MEM stage:\n-ID_RF_enable_MEM_Out = %b, RAW_Enable_Out = %b, RAM_RW_Out = %b, RAM_SE_Out = %b, RAM_Size_Out = %b, ID_load_callOrJumpl_instr_MEM_Out = %b\n5) Outputs of WB Stage:\n-ID_RF_enable_OUT_WB = %b \n6) Monitoring the ID Stage SE1_Out = %b ,SE2_Out = %b, MUX2x1_ID_Target_Address_Out = %b,Times4_Out = %b , Adder_TA_Out = %b , PC_Out of ID = %b\n", $time,I31_0_2, PC_Out, nPC_Out,   I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable, RAM_Enable, RAM_RW, RAM_SE, ID_Jumpl_Instr, ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr, RAM_Size, ID_Load_CallOrJumpl_Instr, ID_ALU_OP,   I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG,ID_Load_Instr_OUT_REG,ID_ALU_OP_OUT_REG, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG,RAM_Size_OUT_REG,ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG,ID_Load_CallOrJumpl_Instr_OUT_REG,   ID_RF_enable_MEM_Out, RAW_Enable_Out, RAM_RW_Out, RAM_SE_Out, RAM_Size_Out, ID_load_callOrJumpl_instr_MEM_Out,ID_RF_enable_OUT_WB,SE1_Out,SE2_Out, MUX2x1_ID_Target_Address_Out,Times4_Out, Adder_TA_Out, PC_Out);
+  //$monitor("R = %b ,GlobR = %b, ID_nPC_enable = %b, ID_PC_enable = %b, IF_ID_enable = %b \n",R,Glob_R,ID_nPC_enable, ID_PC_enable, IF_ID_enable );
+  //$monitor("Time: %0t\nPC = %d, R5 = %d, R6 = %d, R16 = %d, R17 = %d, R18 = %d\n", $time, PC_Out, RF.R5, RF.R6, RF.R16, RF.R17, RF.R18);
 end
 
 endmodule
@@ -609,7 +620,7 @@ module Pipeline_Register_IF_ID (output reg [21:0] I21_0,
             I4_0 <= InstuctionMemoryOut[4:0]; 
             I29_25 <= InstuctionMemoryOut[29:25]; 
             I28_25 <= InstuctionMemoryOut[28:25]; 
-            I21_0 <= InstuctionMemoryOut[21:0]; 
+            I21_0_2 <= InstuctionMemoryOut[21:0]; 
             I31_0 <= InstuctionMemoryOut; 
             I29_25_2 <= InstuctionMemoryOut[29:25]; 
         end
@@ -1029,7 +1040,8 @@ module RAM(output reg[31:0] DataOut, input RW, input[8:0] address, input[31:0] D
   reg [31:0] temp;
   
   always @ (RW, address, DataIn, Size, SE, E)       
-    
+        begin 
+          //$display("Time: %0t, RW = %b, address = %b, Size = %b, SE = %b, E = %b, mem[address] = %b",$time,RW, address, Size, SE, E, mem[address]);
         case(Size)
         2'b00://localizaciones de byte para leer y escribir 
           if (RW==1 && E ==1) //When Write 
@@ -1072,7 +1084,8 @@ module RAM(output reg[31:0] DataOut, input RW, input[8:0] address, input[31:0] D
             begin
                 DataOut = ({mem[address + 0], mem[address + 1], mem[address + 2], mem[address + 3]}); // 4 espacios en memoria
             end    
-    endcase  
+    endcase 
+    end
 endmodule
 
 //Partes del ALU/Source Operan2 Handler Implementation
@@ -1222,10 +1235,10 @@ module PC_nPC_handler (input ID_Jumpl_instr, input OR_signal, output reg [1:0] I
     end
 endmodule
 
-module Reset_handler (input ID_Jumpl_instr, input IF_B_signal, input Glob_R, input I29, output reg R);
-    always @(ID_Jumpl_instr, IF_B_signal,Glob_R, I29)
+module Reset_handler (input ID_Jumpl_instr, input IF_B_signal, input Glob_R, input I29, input ID_B_Instr, output reg R);
+    always @(ID_Jumpl_instr, IF_B_signal,Glob_R, I29, ID_B_Instr)
     begin
-          if (Glob_R == 1 || ID_Jumpl_instr == 1 || IF_B_signal == 1 || (I29 == 1 && IF_B_signal == 0))
+        if (Glob_R == 1 || ID_Jumpl_instr == 1 || IF_B_signal == 1 || (ID_B_Instr == 1 && I29 == 1 && IF_B_signal == 0))
         R = 1;
         else
         R = 0;
