@@ -8,12 +8,12 @@ wire [31:0] nPC_Out,Adder_Out , DataOut, ALU_Out;
 reg Z_TA, N_TA, C_TA, V_TA, Z_IF, N_IF, C_IF, V_IF, Cin ,Z, N, C, V;
 
 // Parameters for CU
-wire  I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable,RAM_Enable, RAM_RW, RAM_SE,	ID_Jumpl_Instr, ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr; 
+wire  I31, I30, I24, I13, I23, ID_Load_Instr, ID_RF_Enable,RAM_Enable, RAM_RW, RAM_SE,	ID_Jumpl_Instr, ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr; 
 wire [1:0] RAM_Size, ID_Load_CallOrJumpl_Instr;
 wire [3:0] ID_ALU_OP;
 
 /// Parameters for Multiplexer
-wire I31_OUT, I30_OUT, I24_OUT, I13_OUT, ID_Load_Instr_OUT, ID_RF_Enable_OUT,ID_Jumpl_Instr_OUT, ID_Instr_Alter_CC_OUT;
+wire I31_OUT, I30_OUT, I24_OUT, I13_OUT, I23_OUT, ID_Load_Instr_OUT, ID_RF_Enable_OUT,ID_Jumpl_Instr_OUT, ID_Instr_Alter_CC_OUT;
 wire [3:0] ID_ALU_OP_OUT; 
 wire [1:0] ID_Load_CallOrJumpl_Instr_OUT; 
 
@@ -32,7 +32,7 @@ wire [31:0] MX1_OUT, MX2_OUT, MX3_OUT, PC_OUT, PC_EX_OUT;
 wire [21:0] I21_0_OUT;
 wire [4:0] RD4_0_OUT_EX; 
 wire [3:0] ID_ALU_OP_OUT_REG;
-wire I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG, ID_Load_Instr_OUT_REG, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG, ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG;
+wire I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG, I23_OUT_REG, ID_Load_Instr_OUT_REG, ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG, ID_Jumpl_Instr_OUT_REG,ID_Instr_Alter_CC_OUT_REG;
 wire [1:0] RAM_Size_OUT_REG, ID_Load_CallOrJumpl_Instr_OUT_REG;
 reg [31:0] PC_IN;
 reg [21:0] I21_0_IN;
@@ -147,7 +147,7 @@ ROM Instruction_Memory(
 );
 
 control_unit ControlUnit (
-    I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable, 
+    I31, I30, I24, I13, I23, ID_Load_Instr, ID_RF_Enable, 
     RAM_Enable, RAM_RW, RAM_SE, ID_Jumpl_Instr,
     ID_Instr_Alter_CC, ID_B_Instr, ID_Call_Instr,
     RAM_Size, ID_Load_CallOrJumpl_Instr, ID_ALU_OP, // Outputs
@@ -155,9 +155,9 @@ control_unit ControlUnit (
 );
 
 ctrl_unit_mux_2x1 CU_MUX(
-    I31_OUT, I30_OUT, I24_OUT, I13_OUT, ID_Load_Instr_OUT, ID_RF_Enable_OUT,
+    I31_OUT, I30_OUT, I24_OUT, I13_OUT,I23_OUT, ID_Load_Instr_OUT, ID_RF_Enable_OUT,
     ID_ALU_OP_OUT, ID_Jumpl_Instr_OUT, ID_Instr_Alter_CC_OUT, ID_Load_CallOrJumpl_Instr_OUT, // Outputs
-    I31, I30, I24, I13, ID_Load_Instr, ID_RF_Enable, 
+    I31, I30, I24, I13, I23, ID_Load_Instr, ID_RF_Enable, 
     ID_ALU_OP, ID_Jumpl_Instr, ID_Instr_Alter_CC, 
     ID_Load_CallOrJumpl_Instr, MX_HFU // Inputs
 ); 
@@ -246,7 +246,7 @@ Pipeline_Register_ID_EX ID_EX (
 
     //Outputs de parte Gris
 /**********************************/
-    I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG,
+    I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG, I23_OUT_REG,
     ID_Load_Instr_OUT_REG,
     ID_ALU_OP_OUT_REG,
     ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG,
@@ -264,7 +264,7 @@ Pipeline_Register_ID_EX ID_EX (
 
     //Inputs Parte Gris
 /**********************************/
-    I31_OUT,I30_OUT,I24_OUT,I13_OUT,
+    I31_OUT,I30_OUT,I24_OUT,I13_OUT, I23_OUT,
     ID_Load_Instr_OUT,
     ID_ALU_OP_OUT,
     ID_RF_Enable_OUT,RAM_Enable,RAM_RW,RAM_SE,
@@ -286,7 +286,7 @@ Hazards_Fowarding_Unit Hazard_Fwd_Unit(
 source_operand2_handler_sparc_component SO2_Handler( SO2_Handler_Out, //Output
 MX2_OUT, 
 I21_0_OUT,//Imm 
-{I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG} //Inputs
+{I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG}, I23_OUT_REG//Inputs
 );
 
 alu_sparc_component ALU( 
@@ -341,7 +341,7 @@ initial begin
     $fclose(file);
 end
 
-initial #170 $finish;
+initial #500 $finish;
 
 initial begin
   Clk = 0;
@@ -375,14 +375,18 @@ initial begin
   
   // Registers from RF for Test #2:
   //$monitor("Time: %0t\nPC = %d, Instr entering CU = %b, R = %b, ID_Jumpl = %b,  IF_B = %b,  Glob_R = %b, I29 = %b, R1 = %d, R2 = %d, R3 = %d, R5 = %d, I18_14 = %d, I4_0 = %d, I29_25 = %d, PA = %d, PB = %d, PC_RF = %d, ALU A = %d, R = %d, Imm = %b, I31 = %d,I30= %d,I24 = %d,I13= %d, ALU B = %d, ALU_Out = %d, Out_Out = %b, ID_load_callOrJumpl_instr_MEM_Out = %b, RAM_RW_Out = %b,RAM_Size_Out = %b,RAM_SE_Out =%b,RAW_Enable_Out =%b, DataMemoryOut(DO) = %b, MEM_RD = %d, ID_RF_enable_OUT_WB = %b, PW_WB = %b, RD_WB_OUT = %d\nZ = %b, N = %b, C =%b, V =%b , PSR_Out = %b, IF_B =%b, ID_Instr_Alter_CC = %b, ID_B_Instr = %b\n", $time, PC_Out, I31_0_2, R, ID_Jumpl_Instr_OUT_REG,  IF_B,  Glob_R, I29, RF.R1, RF.R2, RF.R3, RF.R5, I18_14, I4_0, I29_25, PA, PB, PC_RF, MX1_OUT, MX2_OUT, I21_0_OUT, I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG, SO2_Handler_Out, ALU_Out, Out_Out, ID_load_callOrJumpl_instr_MEM_Out, RAM_RW_Out,RAM_Size_Out,RAM_SE_Out,RAW_Enable_Out, DO, MEM_RD, ID_RF_enable_OUT_WB, PW_WB, RD_WB_OUT,Z, N, C, V , PSR_Out, IF_B, ID_Instr_Alter_CC_OUT_REG, ID_B_Instr);
-  $monitor("Time: %0t\nPC = %d, Instr entering CU = %b, R = %b, ID_Jumpl = %b,  IF_B = %b,  Glob_R = %b, I29 = %b, R1 = %d, R12 = %d, R3 = %d, R5 = %d, I18_14 = %d, I4_0 = %d, I29_25 = %d, PA = %d, PB = %d, PC_RF = %d, ALU A = %d, R = %d, Imm = %b, I31 = %d,I30= %d,I24 = %d,I13= %d, ALU B = %d, ALU_Out = %d, Out_Out = %b, ID_load_callOrJumpl_instr_MEM_Out = %b, RAM_RW_Out = %b,RAM_Size_Out = %b,RAM_SE_Out =%b,RAW_Enable_Out =%b, DataMemoryOut(DO) = %b, MEM_RD = %d, ID_RF_enable_OUT_WB = %b, PW_WB = %b, RD_WB_OUT = %d\nZ = %b, N = %b, C = %b, V = %b , PSR_Out = %b, IF_B = %b, ID_Instr_Alter_CC = %b, ID_B_Instr = %b\n", $time, PC_Out, I31_0_2, R, ID_Jumpl_Instr_OUT_REG,  IF_B,  Glob_R, I29, RF.R1, RF.R12, RF.R3, RF.R5, I18_14, I4_0, I29_25, PA, PB, PC_RF, MX1_OUT, MX2_OUT, I21_0_OUT, I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG, SO2_Handler_Out, ALU_Out, Out_Out, ID_load_callOrJumpl_instr_MEM_Out, RAM_RW_Out,RAM_Size_Out,RAM_SE_Out,RAW_Enable_Out, DO, MEM_RD, ID_RF_enable_OUT_WB, PW_WB, RD_WB_OUT,Z, N, C, V , PSR_Out, IF_B, ID_Instr_Alter_CC_OUT_REG, ID_B_Instr);
+  //$monitor("Time: %0t\nPC = %d, Instr entering CU = %b, R = %b, ID_Jumpl = %b,  IF_B = %b,  Glob_R = %b, I29 = %b, R1 = %d, R12 = %d, R3 = %d, R5 = %d, I18_14 = %d, I4_0 = %d, I29_25 = %d, PA = %d, PB = %d, PC_RF = %d, ALU A = %d, R = %d, Imm = %b, I31 = %d,I30= %d,I24 = %d,I13= %d, ALU B = %d, ALU_Out = %d, Out_Out = %b, ID_load_callOrJumpl_instr_MEM_Out = %b, RAM_RW_Out = %b,RAM_Size_Out = %b,RAM_SE_Out =%b,RAW_Enable_Out =%b, DataMemoryOut(DO) = %b, MEM_RD = %d, ID_RF_enable_OUT_WB = %b, PW_WB = %b, RD_WB_OUT = %d\nZ = %b, N = %b, C = %b, V = %b , PSR_Out = %b, IF_B = %b, ID_Instr_Alter_CC = %b, ID_B_Instr = %b\n", $time, PC_Out, I31_0_2, R, ID_Jumpl_Instr_OUT_REG,  IF_B,  Glob_R, I29, RF.R1, RF.R12, RF.R3, RF.R5, I18_14, I4_0, I29_25, PA, PB, PC_RF, MX1_OUT, MX2_OUT, I21_0_OUT, I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG, SO2_Handler_Out, ALU_Out, Out_Out, ID_load_callOrJumpl_instr_MEM_Out, RAM_RW_Out,RAM_Size_Out,RAM_SE_Out,RAW_Enable_Out, DO, MEM_RD, ID_RF_enable_OUT_WB, PW_WB, RD_WB_OUT,Z, N, C, V , PSR_Out, IF_B, ID_Instr_Alter_CC_OUT_REG, ID_B_Instr);
+  $monitor("Time: %0t\nPC = %d, ALU A = %d, ALU B = %d, ALU_Out = %d",$time, PC_Out,MX1_OUT, SO2_Handler_Out, ALU_Out);
 end
 
 initial begin
     // Data memory content for Test#1:
     //#74 $monitor("Content in Data memory:\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n", DataMemory.mem[0], DataMemory.mem[1], DataMemory.mem[2], DataMemory.mem[3], DataMemory.mem[4], DataMemory.mem[5], DataMemory.mem[6], DataMemory.mem[7], DataMemory.mem[8], DataMemory.mem[9], DataMemory.mem[10], DataMemory.mem[11], DataMemory.mem[12], DataMemory.mem[13], DataMemory.mem[14], DataMemory.mem[15], DataMemory.mem[16], DataMemory.mem[17], DataMemory.mem[18], DataMemory.mem[19], DataMemory.mem[20], DataMemory.mem[21], DataMemory.mem[22], DataMemory.mem[23],DataMemory.mem[24], DataMemory.mem[25], DataMemory.mem[26], DataMemory.mem[27],DataMemory.mem[28], DataMemory.mem[29], DataMemory.mem[30], DataMemory.mem[31],DataMemory.mem[32], DataMemory.mem[33], DataMemory.mem[34], DataMemory.mem[35],DataMemory.mem[36], DataMemory.mem[37], DataMemory.mem[38], DataMemory.mem[39],DataMemory.mem[40], DataMemory.mem[41], DataMemory.mem[42], DataMemory.mem[43],DataMemory.mem[44], DataMemory.mem[45], DataMemory.mem[46], DataMemory.mem[47],DataMemory.mem[48], DataMemory.mem[49], DataMemory.mem[50], DataMemory.mem[51],DataMemory.mem[52], DataMemory.mem[53], DataMemory.mem[54], DataMemory.mem[55], DataMemory.mem[56],DataMemory.mem[57], DataMemory.mem[58], DataMemory.mem[59]);
     // Data memory content for Test#2:
-    #162 $monitor("Content in Data memory:\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n%b %b %b %b\n", DataMemory.mem[0], DataMemory.mem[1], DataMemory.mem[2], DataMemory.mem[3], DataMemory.mem[4], DataMemory.mem[5], DataMemory.mem[6], DataMemory.mem[7], DataMemory.mem[8], DataMemory.mem[9], DataMemory.mem[10], DataMemory.mem[11], DataMemory.mem[12], DataMemory.mem[13], DataMemory.mem[14], DataMemory.mem[15], DataMemory.mem[16], DataMemory.mem[17], DataMemory.mem[18], DataMemory.mem[19], DataMemory.mem[20], DataMemory.mem[21], DataMemory.mem[22], DataMemory.mem[23],DataMemory.mem[24], DataMemory.mem[25], DataMemory.mem[26], DataMemory.mem[27],DataMemory.mem[28], DataMemory.mem[29], DataMemory.mem[30], DataMemory.mem[31],DataMemory.mem[32], DataMemory.mem[33], DataMemory.mem[34], DataMemory.mem[35],DataMemory.mem[36], DataMemory.mem[37], DataMemory.mem[38], DataMemory.mem[39],DataMemory.mem[40], DataMemory.mem[41], DataMemory.mem[42], DataMemory.mem[43],DataMemory.mem[44], DataMemory.mem[45], DataMemory.mem[46], DataMemory.mem[47],DataMemory.mem[48], DataMemory.mem[49], DataMemory.mem[50], DataMemory.mem[51],DataMemory.mem[52], DataMemory.mem[53], DataMemory.mem[54], DataMemory.mem[55]);
+    //#482 $monitor("Content in Data memory:\n0) %b %b %b %b\n4) %b %b %b %b\n8) %b %b %b %b\n12) %b %b %b %b\n16) %b %b %b %b\n18) %b %b %b %b\n22) %b %b %b %b\n26) %b %b %b %b\n30) %b %b %b %b\n34) %b %b %b %b\n38) %b %b %b %b\n42) %b %b %b %b\n46) %b %b %b %b\n50) %b %b %b %b\n", DataMemory.mem[0], DataMemory.mem[1], DataMemory.mem[2], DataMemory.mem[3], DataMemory.mem[4], DataMemory.mem[5], DataMemory.mem[6], DataMemory.mem[7], DataMemory.mem[8], DataMemory.mem[9], DataMemory.mem[10], DataMemory.mem[11], DataMemory.mem[12], DataMemory.mem[13], DataMemory.mem[14], DataMemory.mem[15], DataMemory.mem[16], DataMemory.mem[17], DataMemory.mem[18], DataMemory.mem[19], DataMemory.mem[20], DataMemory.mem[21], DataMemory.mem[22], DataMemory.mem[23],DataMemory.mem[24], DataMemory.mem[25], DataMemory.mem[26], DataMemory.mem[27],DataMemory.mem[28], DataMemory.mem[29], DataMemory.mem[30], DataMemory.mem[31],DataMemory.mem[32], DataMemory.mem[33], DataMemory.mem[34], DataMemory.mem[35],DataMemory.mem[36], DataMemory.mem[37], DataMemory.mem[38], DataMemory.mem[39],DataMemory.mem[40], DataMemory.mem[41], DataMemory.mem[42], DataMemory.mem[43],DataMemory.mem[44], DataMemory.mem[45], DataMemory.mem[46], DataMemory.mem[47],DataMemory.mem[48], DataMemory.mem[49], DataMemory.mem[50], DataMemory.mem[51],DataMemory.mem[52], DataMemory.mem[53], DataMemory.mem[54], DataMemory.mem[55]);
+    // Data memory content for Test#3:
+    //482 $monitor("Content in Data memory:\n%0d) %b %b %b %b",i,DataMemory.mem[i],DataMemory.mem[i+1],DataMemory.mem[i+2], DataMemory.mem[i+3]);
+    #214 $monitor("Content in Data memory:\n224) %b %b %b %b\n228) %b %b %b %b\n232) %b %b %b %b\n236) %b %b %b %b\n240) %b %b %b %b\n244) %b %b %b %b\n248) %b %b %b %b\n252) %b %b %b %b\n256) %b %b %b %b\n260) %b %b %b %b\n",DataMemory.mem[224], DataMemory.mem[225],DataMemory.mem[226], DataMemory.mem[227], DataMemory.mem[228], DataMemory.mem[229],DataMemory.mem[230], DataMemory.mem[231],DataMemory.mem[232], DataMemory.mem[233],DataMemory.mem[234], DataMemory.mem[235],DataMemory.mem[236], DataMemory.mem[237],DataMemory.mem[238], DataMemory.mem[239], DataMemory.mem[240], DataMemory.mem[241],DataMemory.mem[242], DataMemory.mem[243], DataMemory.mem[244], DataMemory.mem[245],DataMemory.mem[246], DataMemory.mem[247], DataMemory.mem[248], DataMemory.mem[249],DataMemory.mem[250], DataMemory.mem[251], DataMemory.mem[252], DataMemory.mem[253],DataMemory.mem[254], DataMemory.mem[255], DataMemory.mem[256], DataMemory.mem[257],DataMemory.mem[258], DataMemory.mem[259], DataMemory.mem[260], DataMemory.mem[261],DataMemory.mem[262], DataMemory.mem[263]);
 end
 
 endmodule
@@ -391,7 +395,7 @@ endmodule
 /************************************************************************************************************************************************************************************************************************************************************************/
 
 // Control Unit module
-module control_unit(output reg I31, I30, I24, I13,
+module control_unit(output reg I31, I30, I24, I13, bit23,
                     output reg ID_Load_Instr, ID_RF_Enable, 
                     output reg RAM_Enable, RAM_RW, RAM_SE,
                     output reg ID_Jumpl_Instr, ID_Instr_Alter_CC,
@@ -405,6 +409,7 @@ module control_unit(output reg I31, I30, I24, I13,
         I30 = Instr[30];
         I24 = Instr[24];
         I13 = Instr[13];
+        bit23 = Instr[23];
         ID_Load_Instr = ((Instr[31:30] == 2'b11) && (Instr[24:19] == 6'b001001 || Instr[24:19] == 6'b001010 ||
                          Instr[24:19] == 6'b000000 || Instr[24:19] == 6'b000001 || Instr[24:19] == 6'b000010 ||
                          Instr[24:19] == 6'b000011 || Instr[24:19] == 6'b001101)); // Check the OP and then if it's a Load instruction
@@ -535,11 +540,11 @@ endmodule
 
 
 // Multiplexer module for Control Unit
-module ctrl_unit_mux_2x1(output reg I31_OUT, I30_OUT, I24_OUT, I13_OUT, ID_Load_Instr_OUT, ID_RF_Enable_OUT,
+module ctrl_unit_mux_2x1(output reg I31_OUT, I30_OUT, I24_OUT, I13_OUT, bit23_OUT, ID_Load_Instr_OUT, ID_RF_Enable_OUT,
             output reg [3:0] ID_ALU_OP_OUT,
             output reg ID_Jumpl_Instr_OUT, ID_Instr_Alter_CC_OUT,
             output reg [1:0] ID_Load_CallOrJumpl_Instr_OUT,
-            input I31_IN, I30_IN, I24_IN, I13_IN, ID_Load_Instr_IN, ID_RF_Enable_IN, 
+            input I31_IN, I30_IN, I24_IN, I13_IN, bit23, ID_Load_Instr_IN, ID_RF_Enable_IN, 
             input [3:0] ID_ALU_OP_IN,
             input ID_Jumpl_Instr_IN, ID_Instr_Alter_CC_IN,
             input [1:0] ID_Load_CallOrJumpl_Instr_IN,
@@ -550,6 +555,7 @@ module ctrl_unit_mux_2x1(output reg I31_OUT, I30_OUT, I24_OUT, I13_OUT, ID_Load_
             I30_OUT = I30_IN;
             I24_OUT = I24_IN;
             I13_OUT = I13_IN;
+            bit23_OUT = bit23;
             ID_Load_Instr_OUT = ID_Load_Instr_IN;
             ID_RF_Enable_OUT = ID_RF_Enable_IN;
             ID_ALU_OP_OUT = ID_ALU_OP_IN;
@@ -561,6 +567,7 @@ module ctrl_unit_mux_2x1(output reg I31_OUT, I30_OUT, I24_OUT, I13_OUT, ID_Load_
             I30_OUT = 1'b0;
             I24_OUT = 1'b0;
             I13_OUT = 1'b0;
+            bit23_OUT = 1'b0;
             ID_Load_Instr_OUT = 1'b0;
             ID_RF_Enable_OUT = 1'b0;
             ID_ALU_OP_OUT = 4'b0;
@@ -642,7 +649,7 @@ module Pipeline_Register_ID_EX (
 
                 //Outputs de parte Gris
             /**********************************/
-            output reg I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG,
+            output reg I31_OUT_REG,I30_OUT_REG,I24_OUT_REG,I13_OUT_REG, bit23_REG,
             output reg ID_Load_Instr_OUT_REG,
   			output reg [3:0] ID_ALU_OP_OUT_REG,
             output reg ID_RF_Enable_OUT_REG, RAM_Enable_OUT_REG,RAM_RW_OUT_REG,RAM_SE_OUT_REG,
@@ -660,7 +667,7 @@ module Pipeline_Register_ID_EX (
 
                 //Inputs Parte Gris
             /**********************************/
-            input I31_OUT_MUX,I30_OUT_MUX,I24_OUT_MUX,I13_OUT_MUX,
+            input I31_OUT_MUX,I30_OUT_MUX,I24_OUT_MUX,I13_OUT_MUX, bit23,
             input ID_Load_Instr_OUT_MUX,
   			input [3:0] ID_ALU_OP_OUT_MUX,
             input ID_RF_Enable_OUT_MUX, RAM_Enable_OUT_MUX,RAM_RW_OUT_MUX,RAM_SE_OUT_MUX,
@@ -681,6 +688,7 @@ module Pipeline_Register_ID_EX (
             I30_OUT_REG <= 1'b0;
             I24_OUT_REG <= 1'b0;
             I13_OUT_REG <= 1'b0;
+            bit23_REG <= 1'b0;
             ID_Load_Instr_OUT_REG <= 1'b0;
             ID_ALU_OP_OUT_REG <= 5'b0;
             ID_RF_Enable_OUT_REG <= 1'b0;
@@ -703,6 +711,7 @@ module Pipeline_Register_ID_EX (
             I30_OUT_REG <= I30_OUT_MUX;
             I24_OUT_REG <= I24_OUT_MUX;
             I13_OUT_REG <= I13_OUT_MUX;
+            bit23_REG <= bit23;
             ID_Load_Instr_OUT_REG <= ID_Load_Instr_OUT_MUX;
             ID_ALU_OP_OUT_REG <= ID_ALU_OP_OUT_MUX;
             ID_RF_Enable_OUT_REG <= ID_RF_Enable_OUT_MUX;
@@ -1133,8 +1142,9 @@ endmodule
 module source_operand2_handler_sparc_component(output reg [31:0] N, 
                                                 input [31:0] R, 
                                                 input [21:0] Imm, 
-                                                input [3:0] Is);
-    always @(R, Imm, Is)
+                                                input [3:0] Is,
+                                                input bit23);
+    always @(R, Imm, Is) begin
         case(Is)
             4'b0000: N = {Imm, 10'b0000000000};
             4'b0001: N = {Imm, 10'b0000000000};
@@ -1146,13 +1156,21 @@ module source_operand2_handler_sparc_component(output reg [31:0] N,
             4'b0111: N = {{10{Imm[21]}}, Imm};
             4'b1000: N = R;
             4'b1001: N = {{19{Imm[12]}}, Imm[12:0]};
-            4'b1010: N = {{27{1'b0}}, R[4:0]};
+            4'b1010: begin
+                if(bit23 == 1'b1)begin
+                    if(Is[0] == 1'b0) N = R;
+                    else N = {{19{Imm[12]}}, Imm[12:0]};
+                end
+                else N = {{27{1'b0}}, R[4:0]};
+            end
             4'b1011: N = {{27{1'b0}}, Imm[4:0]};
             4'b1100: N = R;
             4'b1101: N = {{19{Imm[12]}}, Imm[12:0]};
             4'b1110: N = R;
             4'b1111: N = {{19{Imm[12]}}, Imm[12:0]};
         endcase
+        $display("Time Src OP2: %0t\nInside Src OP2 Hand: Is = %b, bit23 = %b, Imm = %b, R = %b, N = %b\n", $time,Is,bit23, Imm, R, N);
+    end
 endmodule
 
 //New Modules 
